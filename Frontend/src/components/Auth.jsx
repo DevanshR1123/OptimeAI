@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 
-export const AuthContext = createContext(null);
+export const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -24,4 +25,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const AuthRequired = ({ children }) => {
+  const { authenticated } = useAuth();
+
+  return authenticated ? <>{children}</> : <Navigate to='/' />;
 };

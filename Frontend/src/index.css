@@ -19,6 +19,8 @@
   -webkit-text-size-adjust: 100%;
 }
 
-body {
+#root {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   min-height: 100vh;
 }
