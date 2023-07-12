@@ -1,4 +1,4 @@
-const OptimeAI = () => {
+const Home = () => {
   return (
     <div className='App'>
       <h1 className='text-5xl text-center my-6'>OptimeAI</h1>
@@ -6,4 +6,4 @@ const OptimeAI = () => {
   );
 };
 
-export default OptimeAI;
+export default Home;
