@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import axios from "axios";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState({});
 
   const signedIn = useRef(false);
+  const navigate = useNavigate();
 
   const user = session?.user.identities[0].identity_data;
 
@@ -77,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       setSession(session);
       if (event == "SIGNED_IN" && !signedIn.current) {
         createCalendar(session);
+        navigate("/dashboard");
         console.log("SIGNED IN");
         signedIn.current = true;
       }
