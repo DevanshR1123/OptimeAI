@@ -24,3 +24,11 @@
   grid-template-rows: auto 1fr auto;
   min-height: 100vh;
 }
+
+::-webkit-scrollbar {
+  width: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(156 163 175);
+}

@@ -8,24 +8,26 @@ export const useAuth = () => useContext(AuthContext);
 
 const supabase = createClient(
   import.meta.env["VITE_SUPABASE_PROJECT_URL"],
-  import.meta.env["VITE_SUPABASE_CLIENT_KEY"]
+  import.meta.env["VITE_SUPABASE_CLIENT_KEY"],
 );
 
 export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState({});
+  const [profile, setProfile] = useState(null);
 
   const signedIn = useRef(false);
   const navigate = useNavigate();
 
   const user = session?.user.identities[0].identity_data;
 
-  const createCalendar = async session => {
+  const createCalendar = async (session) => {
     const email = session?.user.identities[0].identity_data.email;
+    const {
+      data: [profile],
+    } = await supabase.from("profiles").select("*").eq("email", email);
     try {
-      const { data: profiles } = await supabase.from("profiles").select("*").eq("email", email);
-      if (profiles[0].calendar_id === null) {
+      if (profile.calendar_id === null) {
         const { data: calendar } = await axios.post(
           `https://www.googleapis.com/calendar/v3/calendars`,
           {
@@ -38,24 +40,42 @@ export const AuthProvider = ({ children }) => {
               Authorization: `Bearer ${session.provider_token}`,
               Accept: "application/json",
             },
-          }
+          },
         );
+
         if (calendar) {
-          const { data: updated, error } = await supabase
+          const {
+            data: [updated],
+            error,
+          } = await supabase
             .from("profiles")
             .update({ calendar_id: calendar.id })
             .eq("email", email)
             .select();
 
-          setProfile(updated[0]);
+          setProfile(updated);
           if (error) throw error;
         }
-      } else {
-        setProfile(profiles[0]);
       }
     } catch ({ name, message }) {
       console.log(name, message);
     }
+  };
+
+  const getProfile = async (session) => {
+    const email = session?.user.identities[0].identity_data.email;
+    const {
+      data: [profile],
+    } = await supabase.from("profiles").select("*").eq("email", email);
+    setProfile(profile);
+  };
+
+  const refreshProfile = async () => {
+    const email = session?.user.identities[0].identity_data.email;
+    const {
+      data: [profile],
+    } = await supabase.from("profiles").select("*").eq("email", email);
+    setProfile(profile);
   };
 
   useEffect(() => {
@@ -68,6 +88,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
         setSession(session);
+        getProfile(session);
         setIsLoading(false);
       }
     });
@@ -114,15 +135,21 @@ export const AuthProvider = ({ children }) => {
     session,
     user,
     profile,
+    supabase,
     Login,
     Logout,
+    refreshProfile,
   };
 
-  return <AuthContext.Provider value={value}>{!isLoading && children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!isLoading && profile && children}
+    </AuthContext.Provider>
+  );
 };
 
 export const AuthRequired = ({ element }) => {
   const { session } = useAuth();
 
-  return session ? <>{element}</> : <Navigate to='/' />;
+  return session ? <>{element}</> : <Navigate to="/" />;
 };
