@@ -3,6 +3,7 @@ import { AuthRequired } from "./contexts/Auth";
 import { Dashboard } from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Navbar from "./Navbar";
+import Timetable from "./pages/Timetable";
 
 const Content = () => {
   return (
@@ -16,6 +17,10 @@ const Content = () => {
           <Route
             path="/dashboard"
             element={<AuthRequired element={<Dashboard />} />}
+          />
+          <Route
+            path="/timetable"
+            element={<AuthRequired element={<Timetable />} />}
           />
           <Route
             path="/*"

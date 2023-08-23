@@ -18,6 +18,12 @@ const Navbar = () => {
   const LogoutView = () => {
     const { name, picture } = user;
 
+    const links = [
+      { label: "Profile", to: "/profile" },
+      { label: "Settings", to: "/settings" },
+      { label: "Logout", to: "/", onClick: Logout },
+    ];
+
     return (
       <Menu className="relative" as="div">
         <Menu.Button className={twMerge(styles.menuButton)}>
@@ -43,26 +49,29 @@ const Navbar = () => {
             )}
             as="ul"
           >
-            <Menu.Item
-              as="li"
-              className={twMerge(styles.menuItem, "text-right")}
-            >
-              <Link to="/profile">Profile</Link>
-            </Menu.Item>
-            <Menu.Item
-              as="li"
-              className={twMerge(styles.menuItem, "text-right")}
-            >
-              <Link to="/settings">Settings</Link>
-            </Menu.Item>
-            <Menu.Item
-              as="li"
-              className={twMerge(styles.menuItem, "text-right")}
-            >
-              <Link to="/" onClick={Logout}>
-                Logout
-              </Link>
-            </Menu.Item>
+            {links.map(({ label, to, onClick }) => (
+              <Menu.Item
+                as="li"
+                className={twMerge(styles.menuItem, "text-right")}
+                key={to}
+              >
+                {({ close }) => (
+                  <Link
+                    to={to}
+                    onClick={
+                      onClick
+                        ? () => {
+                            onClick();
+                            close();
+                          }
+                        : close
+                    }
+                  >
+                    {label}
+                  </Link>
+                )}
+              </Menu.Item>
+            ))}
           </Menu.Items>
         </Transition>
       </Menu>
@@ -76,7 +85,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-primary-900 grid grid-cols-3 items-center justify-between p-2">
+    <nav className="grid grid-cols-3 items-center justify-between bg-primary-900 p-2">
       <div className={twMerge("justify-self-start", !session && "hidden")}>
         <Menu className="relative" as="div">
           <Menu.Button className={twMerge(styles.menuButton, "p-5")}>
@@ -104,7 +113,11 @@ const Navbar = () => {
                   className={twMerge(styles.menuItem, "text-left")}
                   key={to}
                 >
-                  <Link to={to}>{label}</Link>
+                  {({ close }) => (
+                    <Link to={to} onClick={close}>
+                      {label}
+                    </Link>
+                  )}
                 </Menu.Item>
               ))}
             </Menu.Items>
@@ -119,7 +132,7 @@ const Navbar = () => {
           <LogoutView />
         ) : (
           <button
-            className="hover:bg-primary-700 flex items-center gap-2 rounded-xl px-6 py-4 text-lg font-bold"
+            className="flex items-center gap-2 rounded-xl px-6 py-4 text-lg font-bold hover:bg-primary-700"
             onClick={Login}
           >
             <img src={googleIcon} className="h-6 w-6" />
