@@ -16,7 +16,7 @@ export const EventsProvider = ({ children }) => {
   const [tileId, setTileId] = useState(0);
   const [eventId, setEventId] = useState(0);
   const [saving, setSaving] = useState(0);
-  const [changeLog, setChangeLog] = useState([]); // [ { type: "add", data: { tileId, from, duration, day } }, { type: "delete", data: { id } } , ... ]
+  const [changeLog, setChangeLog] = useState([]);
 
   const getDate = (day, time) => {
     const date = new Date();
