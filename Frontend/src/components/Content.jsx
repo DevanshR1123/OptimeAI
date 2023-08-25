@@ -14,27 +14,12 @@ const Content = () => {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route
-            path="/dashboard"
-            element={<AuthRequired element={<Dashboard />} />}
-          />
-          <Route
-            path="/timetable"
-            element={<AuthRequired element={<Timetable />} />}
-          />
-          <Route
-            path="/*"
-            element={
-              <div className="grid h-full place-items-center text-6xl">
-                Coming Soon...
-              </div>
-            }
-          />
+          <Route path="/dashboard" element={<AuthRequired element={<Dashboard />} />} />
+          <Route path="/timetable" element={<AuthRequired element={<Timetable />} />} />
+          <Route path="/*" element={<div className="grid h-full place-items-center text-6xl">Coming Soon...</div>} />
         </Routes>
       </main>
-      <footer className="bg-gray-500 text-center font-bold">
-        OptimeAI &copy; {new Date().getFullYear()}
-      </footer>
+      <footer className="bg-gray-500 text-center font-bold">OptimeAI &copy; {new Date().getFullYear()}</footer>
     </>
   );
 };

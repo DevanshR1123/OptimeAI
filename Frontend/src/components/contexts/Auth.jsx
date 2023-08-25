@@ -6,10 +6,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 export const AuthContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 
-const supabase = createClient(
-  import.meta.env["VITE_SUPABASE_PROJECT_URL"],
-  import.meta.env["VITE_SUPABASE_CLIENT_KEY"],
-);
+const supabase = createClient(import.meta.env["VITE_SUPABASE_PROJECT_URL"], import.meta.env["VITE_SUPABASE_CLIENT_KEY"]);
 
 export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
@@ -26,14 +23,30 @@ export const AuthProvider = ({ children }) => {
     const {
       data: [profile],
     } = await supabase.from("profiles").select("*").eq("email", email);
+
+    let calendar = null;
+
     try {
-      if (profile.calendar_id === null) {
+      const res = await axios.get(`https://www.googleapis.com/calendar/v3/calendars/${profile.calendar_id}`, {
+        headers: {
+          Authorization: `Bearer ${session.provider_token}`,
+          Accept: "application/json",
+        },
+      });
+      calendar = await res.data;
+      console.log("Calendar FOUND");
+    } catch (error) {
+      console.log(error.response.status, error.response.data);
+    }
+
+    try {
+      if (profile.calendar_id === null || !calendar) {
         const { data: calendar } = await axios.post(
           `https://www.googleapis.com/calendar/v3/calendars`,
           {
             summary: "OptimeAI",
             description: "Calendar managed by OptimeAI",
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
           {
             headers: {
@@ -44,14 +57,12 @@ export const AuthProvider = ({ children }) => {
         );
 
         if (calendar) {
+          console.log("Calendar CREATED");
+
           const {
             data: [updated],
             error,
-          } = await supabase
-            .from("profiles")
-            .update({ calendar_id: calendar.id })
-            .eq("email", email)
-            .select();
+          } = await supabase.from("profiles").update({ calendar_id: calendar.id }).eq("email", email).select();
 
           setProfile(updated);
           if (error) throw error;
@@ -99,7 +110,6 @@ export const AuthProvider = ({ children }) => {
       setSession(session);
       if (event == "SIGNED_IN" && !signedIn.current) {
         createCalendar(session);
-        navigate("/dashboard");
         console.log("SIGNED IN");
         signedIn.current = true;
       }
@@ -129,6 +139,8 @@ export const AuthProvider = ({ children }) => {
 
   const Logout = async () => {
     await supabase.auth.signOut();
+    signedIn.current = false;
+    setProfile(null);
   };
 
   const value = {
@@ -141,11 +153,9 @@ export const AuthProvider = ({ children }) => {
     refreshProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!isLoading && children}
-    </AuthContext.Provider>
-  );
+  // console.log(session, profile);
+
+  return <AuthContext.Provider value={value}>{!isLoading && ((!session && !profile) || (session && profile)) && children}</AuthContext.Provider>;
 };
 
 export const AuthRequired = ({ element }) => {

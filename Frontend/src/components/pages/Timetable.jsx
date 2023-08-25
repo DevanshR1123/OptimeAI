@@ -6,7 +6,7 @@ import xIcon from "../../assets/icons/x-icon.svg";
 
 const Timetable = () => {
   useEffect(() => {
-    document.title = "Timetable";
+    document.title = "Timetable | OptimeAI";
   }, []);
 
   return (
@@ -35,11 +35,7 @@ const SavedDialog = () => {
   }, [saving]);
 
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={() => setSaving(0)}
-      className="relative grid place-items-center gap-4 rounded-xl bg-primary-700 p-24 backdrop:bg-black/50 backdrop:backdrop-blur-sm"
-    >
+    <dialog ref={dialogRef} onClose={() => setSaving(0)} className="relative grid place-items-center gap-4 rounded-xl bg-primary-700 p-24 backdrop:bg-black/50 backdrop:backdrop-blur-sm">
       <button className="absolute right-4 top-4" onClick={() => setSaving(0)}>
         <img src={xIcon} alt="Close" className="h-8 w-8" />
       </button>
@@ -54,9 +50,7 @@ const SavedDialog = () => {
       {saving === 2 && (
         <>
           <h2 className="text-center text-3xl font-bold">Saved Successfully</h2>
-          <p className="text-center text-lg font-bold">
-            Your timetable has been saved.
-          </p>
+          <p className="text-center text-lg font-bold">Your timetable has been saved.</p>
         </>
       )}
     </dialog>
