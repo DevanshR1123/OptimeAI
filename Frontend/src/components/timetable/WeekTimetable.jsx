@@ -6,7 +6,7 @@ const WeekCalendar = () => {
   const { events, selectedTile, addEvent } = useEvents();
 
   const [hovering, setHovering] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // const [dialogOpen, setDialogOpen] = useState(false);
 
   const [day, setDay] = useState(0);
   const [from, setFrom] = useState(0);
@@ -41,8 +41,7 @@ const WeekCalendar = () => {
     } else {
       if (movementX !== 0) setDay(Math.floor((7 * (clientX - x)) / width));
 
-      if (movementY >= 0)
-        setDuration(Math.floor((96 * (clientY - y)) / height) - from + 1);
+      if (movementY >= 0) setDuration(Math.floor((96 * (clientY - y)) / height) - from + 1);
       else {
         setFrom(Math.floor((96 * (clientY - y)) / height));
       }
@@ -73,18 +72,12 @@ const WeekCalendar = () => {
               .fill(0)
               .map((_, i) => {
                 return (
-                  <div
-                    key={i}
-                    className="group relative grid items-start gap-2 border-t-2 border-primary-400"
-                  >
+                  <div key={i} className="group relative grid items-start gap-2 border-t-2 border-primary-400">
                     <span className="absolute -left-16 -top-[0.875rem] w-12 text-right font-bold">
                       {i % 2 === 0 &&
-                        new Date(0, 0, 0, 0, i * 30).toLocaleTimeString(
-                          ["en-IN"],
-                          {
-                            hour: "numeric",
-                          },
-                        )}
+                        new Date(0, 0, 0, 0, i * 30).toLocaleTimeString(["en-IN"], {
+                          hour: "numeric",
+                        })}
                     </span>
                   </div>
                 );
@@ -92,7 +85,7 @@ const WeekCalendar = () => {
           </div>
 
           <div
-            className="grid-rows-96 z-10 col-start-1 row-start-1 grid grid-cols-7 gap-x-4"
+            className="z-10 col-start-1 row-start-1 grid grid-cols-7 grid-rows-96 gap-x-4"
             ref={gridRef}
             //   onClick={clickHandler}
             onMouseMove={moveHandler}
@@ -147,26 +140,14 @@ const EditDialog = ({ dialogOpen, setDialogOpen, setEditEvent, editEvent }) => {
     }
   }, [dialogOpen]);
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={() => setDialogOpen(false)}
-      className="grid-rows-sandwich grid grid-cols-2 gap-8 rounded-xl bg-primary-700 p-8 backdrop:bg-black/50 backdrop:backdrop-blur-sm"
-    >
+    <dialog ref={dialogRef} onClose={() => setDialogOpen(false)} className="grid grid-cols-2 grid-rows-sandwich gap-8 rounded-xl bg-primary-700 p-8 backdrop:bg-black/50 backdrop:backdrop-blur-sm">
       <h2 className="col-span-2 text-center text-3xl font-bold">Edit Event</h2>
       <div className="col-span-2 grid grid-cols-2 gap-4 p-4">
         <div className="grid grid-rows-[auto_1fr] gap-1">
           <label htmlFor="name" className="text-lg font-bold">
             Name
           </label>
-          <input
-            type="text"
-            name="name"
-            id="name"
-            className="rounded-lg bg-primary-900 p-4 text-lg font-bold leading-none"
-            onChange={handleInputChange}
-            value={editEvent.name}
-            autoComplete="off"
-          />
+          <input type="text" name="name" id="name" className="rounded-lg bg-primary-900 p-4 text-lg font-bold leading-none" onChange={handleInputChange} value={editEvent.name} autoComplete="off" />
         </div>
       </div>
       <button
@@ -176,10 +157,7 @@ const EditDialog = ({ dialogOpen, setDialogOpen, setEditEvent, editEvent }) => {
       >
         Save
       </button>
-      <button
-        className="grid cursor-pointer select-none place-items-center rounded-lg bg-primary-900 p-4 text-lg font-bold active:bg-primary-800"
-        onClick={() => setDialogOpen(false)}
-      >
+      <button className="grid cursor-pointer select-none place-items-center rounded-lg bg-primary-900 p-4 text-lg font-bold active:bg-primary-800" onClick={() => setDialogOpen(false)}>
         Cancel
       </button>
     </dialog>
