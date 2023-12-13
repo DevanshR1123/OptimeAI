@@ -2,6 +2,11 @@ import os
 
 os.environ["COHERE_API_KEY"] = "dS07uyHpjfRQus3GKTPzOqYVy2b9XIUjxZiFDpFQ"
 
+import json
+
+from langchain.cache import InMemoryCache
+from langchain.globals import set_llm_cache
+from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema.runnable import (
     RunnableBranch,
     RunnableLambda,
@@ -13,13 +18,10 @@ from extracter import extract_chain
 from general import general_chain
 from quick_add import quick_add_chain
 
-from langchain.globals import set_llm_cache
-from langchain.cache import InMemoryCache
-
 set_llm_cache(InMemoryCache())
 
 
-def call_scheduler(prompt_input):
+def call_scheduler(prompt_input, context):
     out = {
         "extract": None,
         "quick_add": None,
@@ -30,9 +32,30 @@ def call_scheduler(prompt_input):
     try:
         print("-" * 50)
 
+        print(context)
+
+        memory = ConversationBufferWindowMemory(k=5, memory_key="history")
+
+        i = 1
+        while i < len(context):
+            conversation = []
+            temp = ""
+            for j in range(i, len(context)):
+                message = context[j]
+                if message["type"] == "user":
+                    conversation.append({"input": message["text"]})
+                elif message["type"] == "event":
+                    temp = json.dumps(message["text"])
+                elif message["type"] == "bot":
+                    conversation.append({"output": temp + "\n" + message["text"]})
+                    i = j + 1
+                    break
+            memory.save_context(*conversation)
+
         llm = {
             "classification": classify_chain,
             "input": lambda x: x["input"],
+            "history": lambda x: x["history"],
         } | RunnableBranch(
             (
                 lambda x: x["classification"] == "yes",
@@ -52,7 +75,9 @@ def call_scheduler(prompt_input):
             RunnablePassthrough.assign(general=general_chain),
         )
 
-        llm_output = llm.invoke({"input": prompt_input.strip()})
+        llm_output = llm.invoke(
+            {"input": prompt_input.strip(), "history": str(memory.chat_memory)}
+        )
         print("-" * 50)
 
     except Exception as e:

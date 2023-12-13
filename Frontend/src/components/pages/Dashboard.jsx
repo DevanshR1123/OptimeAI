@@ -3,10 +3,11 @@ import { useAuth } from "../contexts/Auth";
 import { useCalendar } from "../contexts/Calendar";
 import Chat from "../dashboard/Chat";
 import { CreateEvent } from "../dashboard/CreateEvent";
+import { UpcomingEvents } from "../dashboard/UpcomingEvents";
+import { TodayTimetable } from "../dashboard/TodayTimetable";
+import GetEvents from "../dashboard/GetEvents";
 
 export const Dashboard = () => {
-    // const { getEvents, createEvent, quickAddEvent, deleteEvent } = useCalendar();
-
     useEffect(() => {
         document.title = "Dashboard | OptimeAI";
     }, []);
@@ -16,6 +17,9 @@ export const Dashboard = () => {
             <Chat />
             <section className="grid grid-cols-3 gap-4">
                 <CreateEvent />
+                <UpcomingEvents />
+                <TodayTimetable />
+                {/* <GetEvents /> */}
             </section>
         </div>
     );

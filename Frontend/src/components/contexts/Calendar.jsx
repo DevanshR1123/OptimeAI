@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./Auth";
 import { toast } from "sonner";
 
@@ -127,7 +127,6 @@ export const CalendarProvider = ({ children }) => {
                 timeMax: new Date(to).toISOString(),
             },
         );
-        // console.log(events);
         return events;
     };
 
@@ -197,9 +196,14 @@ export const CalendarProvider = ({ children }) => {
         );
     };
 
-    const updateEvent = async (id, summary, from, to, description, options) => {
+    const updateEvent = async (
+        id,
+        { summary, from, to, description },
+        options,
+        primary = true,
+    ) => {
         const event = await putRequest(
-            `/calendars/${calendar_id}/events/${id}`,
+            `/calendars/${primary ? "primary" : calendar_id}/events/${id}`,
             {
                 summary,
                 description,
@@ -216,6 +220,32 @@ export const CalendarProvider = ({ children }) => {
         );
     };
 
+    const [events, setEvents] = useState([]);
+    const [timetable, setTimetable] = useState([]);
+
+    const updateEvents = () => {
+        getEvents(
+            new Date().toISOString(),
+            new Date(Date.now() + 7 * 60 * 60 * 24 * 1000).toISOString(),
+        ).then((res) => setEvents(res.items));
+    };
+
+    const updateTimetable = () => {
+        const dayStart = new Date().setHours(0, 0, 0, 0);
+        const dayEnd = new Date().setHours(23, 59, 59, 999);
+
+        getEvents(
+            new Date(dayStart).toISOString(),
+            new Date(dayEnd).toISOString(),
+            false,
+        ).then((res) => setTimetable(res.items));
+    };
+
+    useEffect(() => {
+        updateEvents();
+        updateTimetable();
+    }, []);
+
     const value = {
         getCalendars,
 
@@ -226,6 +256,12 @@ export const CalendarProvider = ({ children }) => {
         createWeeklyEvent,
         deleteEvent,
         updateEvent,
+
+        events,
+        updateEvents,
+
+        timetable,
+        updateTimetable,
     };
 
     return (

@@ -14,6 +14,11 @@ response_schema = [
     ResponseSchema(
         name="description", type="string", description="Description of the event"
     ),
+    ResponseSchema(
+        name="type",
+        type="string",
+        description="Type of the event (once, daily, weekly, etc)",
+    ),
 ]
 
 
@@ -36,6 +41,9 @@ afternoon: 2:00 PM
 evening: 6:00 PM
 night: 9:00 PM
 midnight: 12:00 AM
+
+Chat history:
+{history}
 
 Respond with only the extracted information and nothing else.
 Response:

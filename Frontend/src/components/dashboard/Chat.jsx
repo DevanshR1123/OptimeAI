@@ -59,7 +59,16 @@ const Chat = () => {
         ]);
         if (quick_add) {
             const newEvent = await quickAddEvent(quick_add);
-            console.log(newEvent);
+            await updateEvent(
+                newEvent.id,
+                {
+                    summary: extract.title,
+                    from: extract.from,
+                    to: extract.to,
+                    description: `${extract.description}\n\n#OptimeAI`,
+                },
+                {},
+            );
         }
     };
 
@@ -179,6 +188,7 @@ const Chat = () => {
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     className="w-full rounded bg-primary-500 px-4 py-2 font-bold text-white hover:bg-primary-400"
+                    autoFocus
                 />
                 <button
                     onClick={() => {
