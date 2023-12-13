@@ -223,18 +223,18 @@ export const CalendarProvider = ({ children }) => {
     const [events, setEvents] = useState([]);
     const [timetable, setTimetable] = useState([]);
 
-    const updateEvents = () => {
-        getEvents(
+    const updateEvents = async () => {
+        await getEvents(
             new Date().toISOString(),
             new Date(Date.now() + 7 * 60 * 60 * 24 * 1000).toISOString(),
         ).then((res) => setEvents(res.items));
     };
 
-    const updateTimetable = () => {
+    const updateTimetable = async () => {
         const dayStart = new Date().setHours(0, 0, 0, 0);
         const dayEnd = new Date().setHours(23, 59, 59, 999);
 
-        getEvents(
+        await getEvents(
             new Date(dayStart).toISOString(),
             new Date(dayEnd).toISOString(),
             false,

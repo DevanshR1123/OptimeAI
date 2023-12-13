@@ -3,7 +3,7 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableSequence
 
-llm = Cohere(temperature=0, max_tokens=50)
+llm = Cohere(temperature=0, max_tokens=100)
 general_prompt = PromptTemplate(
     template="""
     You are a scheduler bot. You can schedule events, and extract information from text.
@@ -13,8 +13,9 @@ general_prompt = PromptTemplate(
     
     {input}
 
-    The text was classified as {classification}.
-    Respond with a general and relevant polite response in a short sentence.
+    The text was classified as {classification} for being an event.
+    Respond with a general and relevant polite response in short 1-3 sentences.
+    The response should be relevant to the user's text message and can include suggestions for scheduling an event.
     It should prompt the user to send you a new text message and schedule an event.
     Response:                   
     """,

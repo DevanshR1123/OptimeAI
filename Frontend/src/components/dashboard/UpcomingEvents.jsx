@@ -7,7 +7,7 @@ export const UpcomingEvents = () => {
     return (
         <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
             <h1 className="text-2xl font-bold">Upcoming Events</h1>
-            <div className="flex flex-col gap-4">
+            <div className="flex h-full flex-col gap-4 overflow-y-auto">
                 {events.map((event) => (
                     <a href={event.htmlLink} target="_blank" key={event.id}>
                         <div

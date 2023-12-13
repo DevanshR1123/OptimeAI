@@ -7,7 +7,7 @@ import { useLLM } from "../contexts/LLM";
 
 const Chat = () => {
     const { schedule } = useLLM();
-    const { quickAddEvent, updateEvent } = useCalendar();
+    const { quickAddEvent, updateEvent, updateEvents } = useCalendar();
 
     const [text, setText] = useState(
         "Schedule a meeting with John at 2pm tomorrow for an hour",
@@ -42,6 +42,7 @@ const Chat = () => {
         if (!res) {
             addMessage({ text: "Error scheduling event", type: "error" });
             console.log(error);
+            setLoading(false);
             return;
         }
 
@@ -49,6 +50,8 @@ const Chat = () => {
             addMessage({ text: general, type: "bot" });
             return;
         }
+
+        console.log(extract);
 
         addMessage([
             { text: extract, type: "event" },
@@ -69,6 +72,7 @@ const Chat = () => {
                 },
                 {},
             );
+            await updateEvents();
         }
     };
 
