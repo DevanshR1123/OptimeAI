@@ -2,13 +2,20 @@ import axios from "axios";
 import { createContext, useContext } from "react";
 import { useAuth } from "./Auth";
 import { toast } from "sonner";
-import { data } from "autoprefixer";
 
 export const CalendarContext = createContext({});
 export const useCalendar = () => useContext(CalendarContext);
 
 const baseUrl = "https://www.googleapis.com/calendar/v3";
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 export const CalendarProvider = ({ children }) => {
     const { session, profile, Logout } = useAuth();
@@ -100,47 +107,67 @@ export const CalendarProvider = ({ children }) => {
     };
 
     const getEvent = async (id) => {
-        const { data: event } = await axios.get(`${baseUrl}/calendars/${calendar_id}/events/${id}`, {
-            headers: {
-                Authorization: `Bearer ${session.provider_token}`,
-                Accept: "application/json",
+        const { data: event } = await axios.get(
+            `${baseUrl}/calendars/${calendar_id}/events/${id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${session.provider_token}`,
+                    Accept: "application/json",
+                },
             },
-        });
+        );
         return event;
     };
 
     const getEvents = async (from, to, primary = true) => {
-        const events = await getRequest(`/calendars/${primary ? "primary" : calendar_id}/events`, {
-            timeMin: new Date(from).toISOString(),
-            timeMax: new Date(to).toISOString(),
-        });
+        const events = await getRequest(
+            `/calendars/${primary ? "primary" : calendar_id}/events`,
+            {
+                timeMin: new Date(from).toISOString(),
+                timeMax: new Date(to).toISOString(),
+            },
+        );
         // console.log(events);
         return events;
     };
 
     const quickAddEvent = async (text, primary = true) => {
-        const event = await postRequest(`/calendars/${primary ? "primary" : calendar_id}/events/quickAdd`, {
-            text,
-        });
+        const event = await postRequest(
+            `/calendars/${primary ? "primary" : calendar_id}/events/quickAdd`,
+            {
+                text,
+            },
+        );
         // console.log(event);
         toast.success("Event created successfully!");
         return event;
     };
 
-    const createEvent = async (summary, from, to, description, options, primary = true, notify = true) => {
-        const event = await postRequest(`/calendars/${primary ? "primary" : calendar_id}/events`, {
-            summary,
-            description,
-            ...options,
-            start: {
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                dateTime: new Date(from),
+    const createEvent = async (
+        summary,
+        from,
+        to,
+        description,
+        options,
+        primary = true,
+        notify = true,
+    ) => {
+        const event = await postRequest(
+            `/calendars/${primary ? "primary" : calendar_id}/events`,
+            {
+                summary,
+                description,
+                ...options,
+                start: {
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    dateTime: new Date(from),
+                },
+                end: {
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    dateTime: new Date(to),
+                },
             },
-            end: {
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                dateTime: new Date(to),
-            },
-        });
+        );
         // console.log(event);
         if (notify) toast.success("Event created successfully!");
 
@@ -155,7 +182,9 @@ export const CalendarProvider = ({ children }) => {
             to,
             description,
             {
-                recurrence: [`RRULE:FREQ=WEEKLY;WKST=MO;INTERVAL=1;BYDAY=${DAY}`],
+                recurrence: [
+                    `RRULE:FREQ=WEEKLY;WKST=MO;INTERVAL=1;BYDAY=${DAY}`,
+                ],
             },
             false,
             false,
@@ -163,23 +192,28 @@ export const CalendarProvider = ({ children }) => {
     };
 
     const deleteEvent = async (id) => {
-        const event = await deleteRequest(`/calendars/${calendar_id}/events/${id}`);
+        const event = await deleteRequest(
+            `/calendars/${calendar_id}/events/${id}`,
+        );
     };
 
     const updateEvent = async (id, summary, from, to, description, options) => {
-        const event = await putRequest(`/calendars/${calendar_id}/events/${id}`, {
-            summary,
-            description,
-            ...options,
-            start: {
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                dateTime: new Date(from),
+        const event = await putRequest(
+            `/calendars/${calendar_id}/events/${id}`,
+            {
+                summary,
+                description,
+                ...options,
+                start: {
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    dateTime: new Date(from),
+                },
+                end: {
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    dateTime: new Date(to),
+                },
             },
-            end: {
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                dateTime: new Date(to),
-            },
-        });
+        );
     };
 
     const value = {
@@ -194,5 +228,9 @@ export const CalendarProvider = ({ children }) => {
         updateEvent,
     };
 
-    return <CalendarContext.Provider value={value}>{children}</CalendarContext.Provider>;
+    return (
+        <CalendarContext.Provider value={value}>
+            {children}
+        </CalendarContext.Provider>
+    );
 };

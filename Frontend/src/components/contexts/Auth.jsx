@@ -7,7 +7,10 @@ import { toast } from "sonner";
 export const AuthContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 
-const supabase = createClient(import.meta.env["VITE_SUPABASE_PROJECT_URL"], import.meta.env["VITE_SUPABASE_CLIENT_KEY"]);
+const supabase = createClient(
+    import.meta.env["VITE_SUPABASE_PROJECT_URL"],
+    import.meta.env["VITE_SUPABASE_CLIENT_KEY"],
+);
 
 export const AuthProvider = ({ children }) => {
     const [session, setSession] = useState(null);
@@ -34,17 +37,20 @@ export const AuthProvider = ({ children }) => {
         let calendar = null;
 
         try {
-            const res = await axios.get(`https://www.googleapis.com/calendar/v3/calendars/${profile.calendar_id}`, {
-                headers: {
-                    Authorization: `Bearer ${session.provider_token}`,
-                    Accept: "application/json",
+            const res = await axios.get(
+                `https://www.googleapis.com/calendar/v3/calendars/${profile.calendar_id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${session.provider_token}`,
+                        Accept: "application/json",
+                    },
                 },
-            });
+            );
             calendar = await res.data;
             console.log("Calendar FOUND");
         } catch (error) {
             console.log(error.response.status, error.response.data);
-            if (error.error.status === "UNAUTHENTICATED") {
+            if (error.response.data.error.status === "UNAUTHENTICATED") {
                 toast.error("Please login again!");
                 Logout();
                 navigate("/");
@@ -58,7 +64,8 @@ export const AuthProvider = ({ children }) => {
                     {
                         summary: "OptimeAI",
                         description: "Calendar managed by OptimeAI",
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        timeZone:
+                            Intl.DateTimeFormat().resolvedOptions().timeZone,
                     },
                     {
                         headers: {
@@ -74,7 +81,11 @@ export const AuthProvider = ({ children }) => {
                     const {
                         data: [updated],
                         error,
-                    } = await supabase.from("profiles").update({ calendar_id: calendar.id }).eq("email", email).select();
+                    } = await supabase
+                        .from("profiles")
+                        .update({ calendar_id: calendar.id })
+                        .eq("email", email)
+                        .select();
 
                     setProfile(updated);
                     if (error) throw error;
@@ -161,7 +172,13 @@ export const AuthProvider = ({ children }) => {
 
     // console.log(session, profile);
 
-    return <AuthContext.Provider value={value}>{!isLoading && ((!session && !profile) || (session && profile)) && children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {!isLoading &&
+                ((!session && !profile) || (session && profile)) &&
+                children}
+        </AuthContext.Provider>
+    );
 };
 
 export const AuthRequired = ({ element }) => {

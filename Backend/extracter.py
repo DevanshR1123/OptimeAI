@@ -1,71 +1,36 @@
 from datetime import datetime, timedelta
-from typing import List
 
 from langchain.llms.cohere import Cohere
-from langchain.output_parsers import PydanticOutputParser
+from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field, validator
 from langchain.schema.runnable import RunnableSequence
-
-
-class Event(BaseModel):
-    from_: datetime = Field(alias="from")
-    to: datetime
-    title: str
-    description: str
-
-    @validator("to")
-    def to_must_be_after_from(cls, v, values, **kwargs):
-        if "from_" in values and v < values["from_"]:
-            raise ValueError("to must be after from")
-        return v
-
-    @validator("from_")
-    def from_must_be_before_to(cls, v, values, **kwargs):
-        if "to" in values and v > values["to"]:
-            raise ValueError("from must be before to")
-        return v
-
-    @validator("title")
-    def title_must_not_be_empty(cls, v):
-        if not v:
-            raise ValueError("title must not be empty")
-        return v
-
-    class Config:
-        allow_population_by_field_name = True
-        validate_assignment = True
-        extra = "allow"
-        json_encoders = {
-            datetime: lambda dt: dt.isoformat(),
-            timedelta: lambda td: td.total_seconds(),
-        }
-
-
-class EventList(BaseModel):
-    events: List[Event]
-
-    class Config:
-        allow_population_by_field_name = True
-        validate_assignment = True
-        extra = "allow"
-
 
 llm = Cohere(temperature=0, max_tokens=256)
 
-parser = PydanticOutputParser(pydantic_object=Event)
+response_schema = [
+    ResponseSchema(name="from", type="datetime", description="Start time of the event"),
+    ResponseSchema(name="to", type="datetime", description="End time of the event"),
+    ResponseSchema(name="title", type="string", description="Title of the event"),
+    ResponseSchema(
+        name="description", type="string", description="Description of the event"
+    ),
+]
+
+
+parser = StructuredOutputParser(response_schemas=response_schema)
 
 template = """Extract the following information from the text:
 
 {input}
 
+
 {schema}
 
 context:
 today's date and time: {current_date_time}
-tomorrow date: {tomorrow}
+tomorrow's date: {tomorrow}
 
-morinig: 6:00 AM
+morning: 6:00 AM
 noon: 12:00 PM
 afternoon: 2:00 PM
 evening: 6:00 PM
