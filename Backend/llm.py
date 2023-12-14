@@ -31,8 +31,8 @@ def call_scheduler(prompt_input, context):
 
     try:
         print("-" * 50)
-        
-        memory = ConversationBufferWindowMemory(k=5, memory_key="history")
+
+        memory = ConversationBufferWindowMemory(k=10, memory_key="history")
 
         i = 1
         while i < len(context):
