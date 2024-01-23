@@ -10,7 +10,7 @@ export const LLMProvider = ({ children }) => {
         try {
             const res = await axios.post("http://localhost:5000/schedule", {
                 command,
-                // context,
+                context,
             });
             const data = await res.data;
             if (data.error) {
