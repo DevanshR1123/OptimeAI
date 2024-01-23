@@ -13,10 +13,10 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
 )
 
-from classify import classify_chain
-from extracter import extract_chain
-from general import general_chain
-from quick_add import quick_add_chain
+from llm.classify import classify_chain
+from llm.extracter import extract_chain
+from llm.general import general_chain
+from llm.quick_add import quick_add_chain
 
 set_llm_cache(InMemoryCache())
 
