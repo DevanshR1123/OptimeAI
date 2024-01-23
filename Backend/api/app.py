@@ -14,10 +14,14 @@ def index():
 
 @app.post("/schedule")
 def llm():
-    prompt_input = request.json["command"]
-    context = request.json["context"]
-    llm_output = call_scheduler(prompt_input, context)
-    return jsonify(llm_output)
+    try:
+        prompt_input = request.json["command"]
+        context = request.json["context"]
+
+        llm_output = call_scheduler(prompt_input, context)
+        return jsonify(llm_output)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":
