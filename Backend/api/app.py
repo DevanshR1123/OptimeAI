@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, jsonify
-from llm import call_scheduler
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from llm.llm import call_scheduler
 
 app = Flask(__name__)
 
@@ -21,4 +21,4 @@ def llm():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)
