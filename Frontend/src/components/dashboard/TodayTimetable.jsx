@@ -8,7 +8,7 @@ export const TodayTimetable = () => {
 
     return (
         <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
-            <h1 className="text-2xl font-bold">Upcoming Events</h1>
+            <h1 className="text-2xl font-bold">Today's Timetable</h1>
             <div className="flex flex-col gap-4 h-full overflow-y-auto">
                 {timetable
                     .sort(

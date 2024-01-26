@@ -1,8 +1,7 @@
-import os
-
-os.environ["COHERE_API_KEY"] = "dS07uyHpjfRQus3GKTPzOqYVy2b9XIUjxZiFDpFQ"
-
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from langchain.cache import InMemoryCache
 from langchain.globals import set_llm_cache
@@ -13,10 +12,10 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
 )
 
-from llm.classify import classify_chain
-from llm.extracter import extract_chain
-from llm.general import general_chain
-from llm.quick_add import quick_add_chain
+from app.classify import classify_chain
+from app.extracter import extract_chain
+from app.general import general_chain
+from app.quick_add import quick_add_chain
 
 set_llm_cache(InMemoryCache())
 

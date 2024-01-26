@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 
-from langchain.llms.cohere import Cohere
+from app.llm import get_llm
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableSequence
 
-llm = Cohere(temperature=0, max_tokens=256)
+llm = get_llm(max_tokens=256)
 
 response_schema = [
     ResponseSchema(name="from", type="datetime", description="Start time of the event"),

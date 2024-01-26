@@ -60,6 +60,7 @@ const Chat = () => {
                 type: "bot",
             },
         ]);
+
         if (quick_add) {
             const newEvent = await quickAddEvent(quick_add);
             await updateEvent(

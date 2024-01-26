@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from llm.llm import call_scheduler
+from app.scheduler import call_scheduler
 
 app = Flask(__name__)
 
@@ -20,6 +20,7 @@ def llm():
 
         llm_output = call_scheduler(prompt_input, context)
         return jsonify(llm_output)
+
     except Exception as e:
         return jsonify({"error": str(e)})
 

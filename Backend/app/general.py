@@ -1,9 +1,11 @@
-from langchain.llms.cohere import Cohere
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableSequence
 
-llm = Cohere(temperature=0, max_tokens=100)
+from app.llm import get_llm
+
+llm = get_llm()
+
 general_prompt = PromptTemplate(
     template="""
     You are a scheduler bot. You can schedule events, and extract information from text.

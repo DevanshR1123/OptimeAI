@@ -1,9 +1,9 @@
-from langchain.llms.cohere import Cohere
+from app.llm import get_llm
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableSequence, RunnableLambda
+from langchain.schema.runnable import RunnableLambda, RunnableSequence
 
-llm = Cohere(temperature=0, max_tokens=50)
+llm = get_llm(max_tokens=50)
 
 
 quick_add_prompt = PromptTemplate(

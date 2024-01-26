@@ -8,10 +8,13 @@ export const useLLM = () => useContext(LLMContext);
 export const LLMProvider = ({ children }) => {
     const schedule = async (command, context) => {
         try {
-            const res = await axios.post("http://localhost:5000/schedule", {
-                command,
-                context,
-            });
+            const res = await axios.post(
+                `${import.meta.env["VITE_BACKEND_URL"]}/schedule`,
+                {
+                    command,
+                    context,
+                },
+            );
             const data = await res.data;
             if (data.error) {
                 toast.error(data.error);

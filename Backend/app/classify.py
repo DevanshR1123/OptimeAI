@@ -1,13 +1,13 @@
 from typing import Literal
 
-from langchain.llms.cohere import Cohere
+from app.llm import get_llm
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableSequence, RunnableLambda
+from langchain.schema.runnable import RunnableLambda, RunnableSequence
 from langchain_core.pydantic_v1 import BaseModel
 
-llm = Cohere(temperature=0, max_tokens=10)
+llm = get_llm(max_tokens=10)
 
 
 class Classification(BaseModel):
