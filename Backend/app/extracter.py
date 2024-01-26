@@ -17,21 +17,25 @@ response_schema = [
     ResponseSchema(
         name="type",
         type="string",
-        description="Type of the event (once, daily, weekly, etc)",
+        description="Type of the event such as once, daily, weekly, monthly, etc",
+    ),
+    ResponseSchema(
+        name="quick_add",
+        type="string",
+        description="summary of event using the extracted information including the type",
     ),
 ]
 
 
 parser = StructuredOutputParser(response_schemas=response_schema)
 
-template = """Extract the following information from the text:
+template = """Extract the following information about a google calendar event from the text:
 
 {input}
 
-
 {schema}
 
-context:
+Here are some reference values:
 today's date and time: {current_date_time}
 tomorrow's date: {tomorrow}
 
@@ -42,10 +46,14 @@ evening: 6:00 PM
 night: 9:00 PM
 midnight: 12:00 AM
 
-Chat history:
+Use the following text as a guide to extract the information:
 {history}
 
-Respond with only the extracted information and nothing else.
+Do not have null values for any of the fields.
+Make reasonable assumptions about the duration and description.
+Generate a description if its not found in the text.
+For recurring events, the from and to fields should be of the same day which needs to repeat.
+Respond with only the extracted information and nothing else. 
 Response:
 """
 
@@ -58,5 +66,11 @@ schedule_extract_prompt = PromptTemplate(
         "tomorrow": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
     },
 )
+
+# print(
+#     schedule_extract_prompt.format(
+#         input="I have a meeting tomorrow at 9:00 AM", history=""
+#     )
+# )
 
 extract_chain: RunnableSequence = schedule_extract_prompt | llm | parser

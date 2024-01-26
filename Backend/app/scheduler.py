@@ -31,7 +31,11 @@ def call_scheduler(prompt_input, context):
     try:
         print("-" * 50)
 
+        # Chat Memory
+
         memory = ConversationBufferWindowMemory(k=10, memory_key="history")
+
+        memory.save_context({"input": ""}, {"output": context[0]["text"]})
 
         i = 1
         while i < len(context):
@@ -42,12 +46,17 @@ def call_scheduler(prompt_input, context):
                 if message["type"] == "user":
                     conversation.append({"input": message["text"]})
                 elif message["type"] == "event":
-                    temp = json.dumps(message["text"])
+                    temp = json.dumps(message["text"], indent=4)
                 elif message["type"] == "bot":
                     conversation.append({"output": temp + "\n" + message["text"]})
                     i = j + 1
                     break
             memory.save_context(*conversation)
+
+        print("Chat Memory:")
+        print(memory.chat_memory)
+
+        # Scheduler
 
         llm = {
             "classification": classify_chain,
@@ -57,24 +66,30 @@ def call_scheduler(prompt_input, context):
             (
                 lambda x: x["classification"] == "yes",
                 RunnablePassthrough.assign(extract=extract_chain)
-                | RunnablePassthrough.assign(
-                    quick_add={
-                        "from": lambda x: x["extract"]["from"],
-                        "to": lambda x: x["extract"]["to"],
-                        "title": lambda x: x["extract"]["title"],
-                        "description": lambda x: x["extract"]["description"],
-                        "input": lambda x: x["input"],
-                    }
-                    | quick_add_chain
-                    | RunnableLambda(lambda x: x.split("\n")[0])
-                ),
+                # | RunnablePassthrough.assign(
+                #     quick_add={
+                #         "from": lambda x: x["extract"]["from"],
+                #         "to": lambda x: x["extract"]["to"],
+                #         "title": lambda x: x["extract"]["title"],
+                #         "description": lambda x: x["extract"]["description"],
+                #         "input": lambda x: x["input"],
+                #     }
+                #     | quick_add_chain
+                #     | RunnableLambda(lambda x: x.split("\n")[0])
+                # ),
             ),
             RunnablePassthrough.assign(general=general_chain),
         )
 
+        # Output
+
         llm_output = llm.invoke(
             {"input": prompt_input.strip(), "history": str(memory.chat_memory)}
         )
+
+        print("Scheduler Output:")
+        print(llm_output)
+
         print("-" * 50)
 
     except Exception as e:

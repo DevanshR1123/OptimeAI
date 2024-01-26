@@ -19,7 +19,7 @@ export const Dashboard = () => {
                 <CreateEvent />
                 <UpcomingEvents />
                 <TodayTimetable />
-                {/* <GetEvents /> */}
+                <GetEvents />
             </section>
         </div>
     );

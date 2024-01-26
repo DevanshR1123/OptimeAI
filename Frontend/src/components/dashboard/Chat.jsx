@@ -7,7 +7,8 @@ import { useLLM } from "../contexts/LLM";
 
 const Chat = () => {
     const { schedule } = useLLM();
-    const { quickAddEvent, updateEvent, updateEvents } = useCalendar();
+    const { quickAddEvent, updateEvent, updateEvents, createEvent } =
+        useCalendar();
 
     const [text, setText] = useState(
         "Schedule a meeting with John at 2pm tomorrow for an hour",
@@ -37,7 +38,7 @@ const Chat = () => {
         addMessage({ text, type: "user" });
         setLoading(true);
         const res = await schedule(text, messages);
-        const { extract, quick_add, error, classification, general } = res;
+        const { extract, error, classification, general } = res;
         setLoading(false);
         if (!res) {
             addMessage({ text: "Error scheduling event", type: "error" });
@@ -61,6 +62,8 @@ const Chat = () => {
             },
         ]);
 
+        const quick_add = extract.quick_add;
+
         if (quick_add) {
             const newEvent = await quickAddEvent(quick_add);
             await updateEvent(
@@ -73,6 +76,13 @@ const Chat = () => {
                 },
                 {},
             );
+            // const newEvent = await createEvent(
+            //     extract.title,
+            //     extract.from,
+            //     extract.to,
+            //     `${extract.description}\n\n#OptimeAI`,
+            //     {},
+            // );
             await updateEvents();
         }
     };
