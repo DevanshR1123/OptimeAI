@@ -36,8 +36,8 @@ template = """Extract the following information about a google calendar event fr
 {schema}
 
 Here are some reference values:
-today's date and time: {current_date_time}
-tomorrow's date: {tomorrow}
+today's date and time: {current_date_time} (in the format: day, year-month-day hour:minute:second in 24 hour format)
+tomorrow's date: {tomorrow} (in the format: day, year-month-day)
 
 morning: 6:00 AM
 noon: 12:00 PM
@@ -47,7 +47,7 @@ night: 9:00 PM
 midnight: 12:00 AM
 
 Use the following text as a guide to extract the information:
-{history}
+{context}
 
 Do not have null values for any of the fields.
 Make reasonable assumptions about the duration and description.
@@ -59,17 +59,17 @@ Response:
 
 schedule_extract_prompt = PromptTemplate(
     template=template,
-    input_variables=["input"],
+    input_variables=["input", "context"],
     partial_variables={
         "schema": parser.get_format_instructions(),
-        "current_date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "tomorrow": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+        "current_date_time": datetime.now().strftime("%A, %Y-%m-%d %H:%M:%S"),
+        "tomorrow": (datetime.now() + timedelta(days=1)).strftime("%A, %Y-%m-%d"),
     },
 )
 
 # print(
 #     schedule_extract_prompt.format(
-#         input="I have a meeting tomorrow at 9:00 AM", history=""
+#         input="I have a meeting tomorrow at 9:00 AM", context=""
 #     )
 # )
 

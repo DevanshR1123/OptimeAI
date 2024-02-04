@@ -15,7 +15,9 @@ from langchain.schema.runnable import (
 from app.classify import classify_chain
 from app.extracter import extract_chain
 from app.general import general_chain
-from app.quick_add import quick_add_chain
+from app.get_context import context_chain
+
+# from app.quick_add import quick_add_chain
 
 set_llm_cache(InMemoryCache())
 
@@ -35,8 +37,6 @@ def call_scheduler(prompt_input, context):
 
         memory = ConversationBufferWindowMemory(k=10, memory_key="history")
 
-        memory.save_context({"input": ""}, {"output": context[0]["text"]})
-
         i = 1
         while i < len(context):
             conversation = []
@@ -48,7 +48,9 @@ def call_scheduler(prompt_input, context):
                 elif message["type"] == "event":
                     temp = json.dumps(message["text"], indent=4)
                 elif message["type"] == "bot":
-                    conversation.append({"output": temp + "\n" + message["text"]})
+                    conversation.append(
+                        {"output": temp + "\n" if temp != "" else "" + message["text"]}
+                    )
                     i = j + 1
                     break
             memory.save_context(*conversation)
@@ -58,27 +60,19 @@ def call_scheduler(prompt_input, context):
 
         # Scheduler
 
-        llm = {
-            "classification": classify_chain,
-            "input": lambda x: x["input"],
-            "history": lambda x: x["history"],
-        } | RunnableBranch(
-            (
-                lambda x: x["classification"] == "yes",
-                RunnablePassthrough.assign(extract=extract_chain)
-                # | RunnablePassthrough.assign(
-                #     quick_add={
-                #         "from": lambda x: x["extract"]["from"],
-                #         "to": lambda x: x["extract"]["to"],
-                #         "title": lambda x: x["extract"]["title"],
-                #         "description": lambda x: x["extract"]["description"],
-                #         "input": lambda x: x["input"],
-                #     }
-                #     | quick_add_chain
-                #     | RunnableLambda(lambda x: x.split("\n")[0])
-                # ),
-            ),
-            RunnablePassthrough.assign(general=general_chain),
+        llm = (
+            {
+                "context": context_chain,
+                "input": lambda x: x["input"],
+            }
+            | RunnablePassthrough.assign(classification=classify_chain)
+            | RunnableBranch(
+                (
+                    lambda x: x["classification"] == "yes",
+                    RunnablePassthrough.assign(extract=extract_chain),
+                ),
+                RunnablePassthrough.assign(general=general_chain),
+            )
         )
 
         # Output
@@ -88,12 +82,12 @@ def call_scheduler(prompt_input, context):
         )
 
         print("Scheduler Output:")
-        print(llm_output)
+        print(json.dumps(llm_output, indent=4))
 
         print("-" * 50)
 
     except Exception as e:
-        print(e)
+        print(e.with_traceback())
         return {**out, "error": str(e)}
 
     return {**out, **llm_output}

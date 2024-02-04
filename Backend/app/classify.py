@@ -35,14 +35,14 @@ Examples of events:
 - Watch a movie at 9pm
     
 Use the following chat history as a guide to respond:
-{history}
+{context}
 
 Use only the latest message as context for the current input.
 
 Respond with either 'yes' or 'no'.
 Response:
 """,
-    input_variables=["input"],
+    input_variables=["input", "context"],
 )
 
 classify_chain: RunnableSequence = (
