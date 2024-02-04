@@ -62,27 +62,21 @@ const Chat = () => {
             },
         ]);
 
-        const quick_add = extract.quick_add;
-
-        if (quick_add) {
-            const newEvent = await quickAddEvent(quick_add);
-            await updateEvent(
-                newEvent.id,
+        {
+            const { title, description, from, to, recurring, repeat, rrule } =
+                extract;
+            const newEvent = await createEvent(
+                title,
+                from,
+                to,
+                `${description}\n\n#OptimeAI`,
                 {
-                    summary: extract.title,
-                    from: extract.from,
-                    to: extract.to,
-                    description: `${extract.description}\n\n#OptimeAI`,
+                    recurrence: recurring ? [`RRULE:${rrule}`] : [],
                 },
-                {},
             );
-            // const newEvent = await createEvent(
-            //     extract.title,
-            //     extract.from,
-            //     extract.to,
-            //     `${extract.description}\n\n#OptimeAI`,
-            //     {},
-            // );
+
+            console.log(newEvent);
+
             await updateEvents();
         }
     };

@@ -31,7 +31,7 @@ def call_scheduler(prompt_input, context):
     }
 
     try:
-        print("-" * 50)
+        # print("-" * 50)
 
         # Chat Memory
 
@@ -55,8 +55,8 @@ def call_scheduler(prompt_input, context):
                     break
             memory.save_context(*conversation)
 
-        print("Chat Memory:")
-        print(memory.chat_memory)
+        # print("Chat Memory:")
+        # print(memory.chat_memory)
 
         # Scheduler
 
@@ -84,7 +84,7 @@ def call_scheduler(prompt_input, context):
         print("Scheduler Output:")
         print(json.dumps(llm_output, indent=4))
 
-        print("-" * 50)
+        # print("-" * 50)
 
     except Exception as e:
         print(e.with_traceback())

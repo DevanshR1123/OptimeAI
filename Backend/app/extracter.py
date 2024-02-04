@@ -1,36 +1,36 @@
 from datetime import datetime, timedelta
 
 from app.llm import get_llm
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain.output_parsers import (
+    ResponseSchema,
+    StructuredOutputParser,
+)
+
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableSequence
 
 llm = get_llm(max_tokens=256)
 
-response_schema = [
-    ResponseSchema(name="from", type="datetime", description="Start time of the event"),
-    ResponseSchema(name="to", type="datetime", description="End time of the event"),
-    ResponseSchema(name="title", type="string", description="Title of the event"),
-    ResponseSchema(
-        name="description", type="string", description="Description of the event"
-    ),
-    ResponseSchema(
-        name="type",
-        type="string",
-        description="Type of the event such as once, daily, weekly, monthly, etc",
-    ),
-    ResponseSchema(
-        name="quick_add",
-        type="string",
-        description="summary of event using the extracted information including the type",
-    ),
-]
+
+class Event(BaseModel):
+    from_: datetime = Field(
+        alias="from", description="Start date and time of the event without timezone"
+    )
+    to: datetime = Field(description="End date and time of the event without timezone")
+    title: str = Field(description="Title of the event")
+    description: str = Field(description="Description of the event")
+    duration: str = Field(description="Duration of the event")
+    recurring: bool = Field(description="Is the event recurring")
+    repeat: str = Field(description="Recurring pattern of the event")
+    rrule: str = Field(description="Recurring rule of the event")
 
 
-parser = StructuredOutputParser(response_schemas=response_schema)
+parser = JsonOutputParser(pydantic_object=Event)
 
-template = """Extract the following information about a google calendar event from the text:
-
+template = """
+Extract the following information about a google calendar event from the text:
 {input}
 
 {schema}
@@ -72,5 +72,7 @@ schedule_extract_prompt = PromptTemplate(
 #         input="I have a meeting tomorrow at 9:00 AM", context=""
 #     )
 # )
+
+print(parser.get_format_instructions())
 
 extract_chain: RunnableSequence = schedule_extract_prompt | llm | parser
