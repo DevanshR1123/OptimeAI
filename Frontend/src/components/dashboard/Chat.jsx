@@ -228,7 +228,9 @@ const Chat = () => {
 };
 export default Chat;
 
-const EventMessage = ({ event: { from, to, title, description } }) => {
+const EventMessage = ({
+    event: { from, to, title, description, recurring, repeat },
+}) => {
     return (
         <>
             <div className="flex flex-col gap-2 bg-blue-700/25 px-4 py-4 before:mr-2 before:font-semibold before:[content:'>>_Scheduling_Event:']">
@@ -242,6 +244,13 @@ const EventMessage = ({ event: { from, to, title, description } }) => {
                         <span>
                             <strong>Description: </strong>
                             {description}
+                        </span>
+                    )}
+
+                    {recurring && (
+                        <span>
+                            <strong>Recurring: </strong>
+                            {repeat.toUpperCase()}
                         </span>
                     )}
                 </div>

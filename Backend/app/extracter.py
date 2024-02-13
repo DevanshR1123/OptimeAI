@@ -73,6 +73,6 @@ schedule_extract_prompt = PromptTemplate(
 #     )
 # )
 
-print(parser.get_format_instructions())
+# print(parser.get_format_instructions())
 
 extract_chain: RunnableSequence = schedule_extract_prompt | llm | parser
