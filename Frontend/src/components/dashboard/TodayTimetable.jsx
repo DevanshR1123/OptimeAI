@@ -8,8 +8,22 @@ export const TodayTimetable = () => {
 
     return (
         <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
-            <h1 className="text-2xl font-bold">Today's Timetable</h1>
-            <div className="flex flex-col gap-4 h-full overflow-y-auto">
+            <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+                <h1 className="text-2xl font-bold">Today's Timetable</h1>
+                <div className="grid max-w-fit text-right">
+                    <span>
+                        {now.toLocaleString("en-IN", {
+                            weekday: "long",
+                        })}
+                    </span>
+                    <span>
+                        {now.toLocaleString("en-IN", {
+                            dateStyle: "long",
+                        })}
+                    </span>
+                </div>
+            </div>
+            <div className="flex h-full flex-col gap-4 overflow-y-auto">
                 {timetable
                     .sort(
                         (a, b) =>
@@ -38,16 +52,12 @@ export const TodayTimetable = () => {
                                     {new Date(
                                         event.start.dateTime,
                                     ).toLocaleString("en-IN", {
-                                        dateStyle: "short",
                                         timeStyle: "short",
                                     })}
-                                </p>
-                                <span>—</span>
-                                <p className="font-semibold">
+                                    <span> — </span>
                                     {new Date(
                                         event.end.dateTime,
                                     ).toLocaleString("en-IN", {
-                                        dateStyle: "short",
                                         timeStyle: "short",
                                     })}
                                 </p>

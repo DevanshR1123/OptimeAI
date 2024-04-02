@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 import ReloadIcon from "../../assets/icons/reload.svg";
 
 export const UpcomingEvents = () => {
-    const { events, updateEvents } = useCalendar();
+    const { events, updateEvents, deleteEvent } = useCalendar();
 
     return (
         <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
@@ -20,36 +20,32 @@ export const UpcomingEvents = () => {
             </div>
             <div className="flex h-full flex-col gap-4 overflow-y-auto">
                 {events.map((event) => (
-                    <a href={event.htmlLink} target="_blank" key={event.id}>
-                        <div
-                            className={twMerge(
-                                "grid h-fit grid-cols-[1fr-auto_1fr] grid-rows-2 gap-2 rounded-lg bg-primary-700 px-6 py-4",
-                                event.description?.includes("#OptimeAI")
-                                    ? "bg-green-500"
-                                    : "bg-primary-600",
-                            )}
-                        >
-                            <h3 className="col-span-3 text-xl font-bold">
+                    <div
+                        className={twMerge(
+                            "grid h-fit grid-cols-[1fr-auto] grid-rows-2 gap-2 rounded-lg bg-primary-700 px-6 py-4",
+                            event.description?.includes("#OptimeAI")
+                                ? "bg-green-800"
+                                : "bg-primary-600",
+                        )}
+                    >
+                        <a href={event.htmlLink} target="_blank" key={event.id}>
+                            <h3 className="text-xl font-bold">
                                 {event.summary}
                             </h3>
-                            <p className="font-semibold">
-                                {new Date(event.start.dateTime).toLocaleString(
-                                    "en-IN",
-                                    { dateStyle: "short", timeStyle: "short" },
-                                )}
-                            </p>
-                            <span>—</span>
-                            <p className="font-semibold">
-                                {new Date(event.end.dateTime).toLocaleString(
-                                    "en-IN",
-                                    {
-                                        dateStyle: "short",
-                                        timeStyle: "short",
-                                    },
-                                )}
-                            </p>
-                        </div>
-                    </a>
+                        </a>
+                        <button
+                            className="aspect-square w-6 place-self-end rounded-md bg-primary-800 p-1 text-xs "
+                            onClick={() => deleteEvent(event.id)}
+                        >
+                            X
+                        </button>
+                        <p className="col-span-2 font-semibold">
+                            <EventDateFormat
+                                from={event.start.dateTime}
+                                to={event.end.dateTime}
+                            />
+                        </p>
+                    </div>
                 ))}
             </div>
         </div>
@@ -57,3 +53,39 @@ export const UpcomingEvents = () => {
 };
 
 export default UpcomingEvents;
+
+const EventDateFormat = ({ from, to }) => {
+    const from_date = new Date(from);
+    const to_date = new Date(to);
+
+    if (from_date.getDate() === to_date.getDate())
+        return (
+            <>
+                {from_date.toLocaleString("en-in", {
+                    dateStyle: "long",
+                })}
+                ,{" "}
+                {`${from_date.toLocaleString("en-in", {
+                    hour: "numeric",
+                    minute: "numeric",
+                })} — ${to_date.toLocaleString("en-in", {
+                    hour: "numeric",
+                    minute: "numeric",
+                })}`}
+            </>
+        );
+    else
+        return (
+            <>
+                {new Date(event.start.dateTime).toLocaleString("en-IN", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                })}
+                <span> — </span>
+                {new Date(event.end.dateTime).toLocaleString("en-IN", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                })}
+            </>
+        );
+};

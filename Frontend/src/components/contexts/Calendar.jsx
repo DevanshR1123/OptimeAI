@@ -190,12 +190,6 @@ export const CalendarProvider = ({ children }) => {
         );
     };
 
-    const deleteEvent = async (id) => {
-        const event = await deleteRequest(
-            `/calendars/${calendar_id}/events/${id}`,
-        );
-    };
-
     const updateEvent = async (
         id,
         { summary, from, to, description },
@@ -239,6 +233,14 @@ export const CalendarProvider = ({ children }) => {
             new Date(dayEnd).toISOString(),
             false,
         ).then((res) => setTimetable(res.items));
+    };
+
+    const deleteEvent = async (id, primary = true, notify = true) => {
+        const event = await deleteRequest(
+            `/calendars/${primary ? "primary" : calendar_id}/events/${id}`,
+        );
+        if (notify) toast.success("Event deleted successfully!");
+        await updateEvents();
     };
 
     useEffect(() => {

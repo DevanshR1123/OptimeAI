@@ -159,7 +159,7 @@ const Chat = () => {
     }, [messages, loading, recognizing]);
 
     return (
-        <div className="grid h-[36rem] grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
+        <div className="col-span-5 grid h-full grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
             <h1 className="text-2xl font-bold">Chat</h1>
 
             <div className="flex max-h-full flex-col overflow-y-auto rounded bg-neutral-600">

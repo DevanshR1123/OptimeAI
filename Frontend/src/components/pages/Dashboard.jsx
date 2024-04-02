@@ -13,13 +13,13 @@ export const Dashboard = () => {
     }, []);
 
     return (
-        <div className="grid gap-8 p-8">
+        <div className="grid h-full grid-cols-7 gap-8 p-8">
             <Chat />
-            <section className="grid grid-cols-3 gap-4">
-                <CreateEvent />
+            <section className="col-span-2 grid gap-4">
+                {/* <CreateEvent /> */}
                 <UpcomingEvents />
                 <TodayTimetable />
-                <GetEvents />
+                {/* <GetEvents /> */}
             </section>
         </div>
     );
