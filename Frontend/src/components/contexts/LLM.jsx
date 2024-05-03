@@ -1,11 +1,14 @@
 import { createContext, useContext } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { useAuth } from "./Auth";
 
 export const LLMContext = createContext({});
 export const useLLM = () => useContext(LLMContext);
 
 export const LLMProvider = ({ children }) => {
+    const { session, profile } = useAuth();
+
     const schedule = async (command, context) => {
         try {
             const res = await axios.post(
@@ -13,6 +16,9 @@ export const LLMProvider = ({ children }) => {
                 {
                     command,
                     context,
+                    token: session.provider_token,
+                    name: profile.name,
+                    calendar_id: profile.calendar_id,
                 },
             );
             const data = await res.data;
@@ -27,6 +33,8 @@ export const LLMProvider = ({ children }) => {
             return null;
         }
     };
+
+    // console.log(session?.provider_token);
 
     const value = {
         schedule,

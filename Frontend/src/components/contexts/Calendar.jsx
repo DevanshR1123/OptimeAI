@@ -34,8 +34,8 @@ export const CalendarProvider = ({ children }) => {
             const data = await res.data;
             return data;
         } catch (error) {
-            console.log(error.response.data);
-            if (error.response.data.error.status === "UNAUTHENTICATED") {
+            console.log(error.response?.data);
+            if (error.response?.data.error.status === "UNAUTHENTICATED") {
                 toast.error("Please login again!");
                 Logout();
             }
@@ -54,8 +54,8 @@ export const CalendarProvider = ({ children }) => {
             const data = await res.data;
             return data;
         } catch (error) {
-            console.log(error.response.data);
-            if (error.response.data.error.status === "UNAUTHENTICATED") {
+            console.log(error.response?.data);
+            if (error.response?.data.error.status === "UNAUTHENTICATED") {
                 toast.error("Please login again!");
                 Logout();
             }
@@ -218,21 +218,23 @@ export const CalendarProvider = ({ children }) => {
     const [timetable, setTimetable] = useState([]);
 
     const updateEvents = async () => {
+        if (!session) return;
         await getEvents(
             new Date().toISOString(),
             new Date(Date.now() + 7 * 60 * 60 * 24 * 1000).toISOString(),
-        ).then((res) => setEvents(res.items));
+        ).then((res) => setEvents(res?.items));
     };
 
     const updateTimetable = async () => {
         const dayStart = new Date().setHours(0, 0, 0, 0);
         const dayEnd = new Date().setHours(23, 59, 59, 999);
 
+        if (!session) return;
         await getEvents(
             new Date(dayStart).toISOString(),
             new Date(dayEnd).toISOString(),
             false,
-        ).then((res) => setTimetable(res.items));
+        ).then((res) => setTimetable(res?.items));
     };
 
     const deleteEvent = async (id, primary = true, notify = true) => {

@@ -27,6 +27,7 @@ export const UpcomingEvents = () => {
                                 ? "bg-green-800"
                                 : "bg-primary-600",
                         )}
+                        key={event.id}
                     >
                         <a href={event.htmlLink} target="_blank" key={event.id}>
                             <h3 className="text-xl font-bold">

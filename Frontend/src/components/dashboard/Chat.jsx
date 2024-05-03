@@ -1,344 +1,328 @@
-import React, { useEffect, useRef, useState } from "react";
-import { twMerge } from "tailwind-merge";
-import MicIcon from "../../assets/icons/microphone.svg";
-import ActiveMicIcon from "../../assets/icons/microphone-active.svg";
-import { useCalendar } from "../contexts/Calendar";
-import { useLLM } from "../contexts/LLM";
+import React, { useEffect, useRef, useState } from 'react'
+import { twMerge } from 'tailwind-merge'
+import MicIcon from '../../assets/icons/microphone.svg'
+import ActiveMicIcon from '../../assets/icons/microphone-active.svg'
+import { useCalendar } from '../contexts/Calendar'
+import { useLLM } from '../contexts/LLM'
 
 const Chat = () => {
-    const { schedule } = useLLM();
-    const { quickAddEvent, updateEvent, updateEvents, createEvent } =
-        useCalendar();
+  const { schedule } = useLLM()
+  const { quickAddEvent, updateEvent, updateEvents, createEvent } = useCalendar()
 
-    const [text, setText] = useState(
-        "Schedule a meeting with John at 2pm tomorrow for an hour",
-    );
+  const [text, setText] = useState('Schedule a meeting with John at 2pm tomorrow for an hour')
 
-    const [messages, setMessages] = useState([
-        {
-            text: "Hi, how can I help you?",
-            type: "bot",
-        },
-    ]);
+  const [messages, setMessages] = useState([
+    {
+      text: 'Hi, how can I help you?',
+      type: 'bot',
+    },
+  ])
 
-    const [loading, setLoading] = useState(false);
-    const [recognizing, setRecognizing] = useState(false);
+  const [loading, setLoading] = useState(false)
+  const [recognizing, setRecognizing] = useState(false)
 
-    const bottom = useRef(null);
-    const recognition = useRef(null);
+  const bottom = useRef(null)
+  const recognition = useRef(null)
 
-    const addMessage = (message) => {
-        if (Array.isArray(message)) setMessages((m) => [...m, ...message]);
-        else setMessages((m) => [...m, message]);
-    };
+  const addMessage = (message) => {
+    if (Array.isArray(message)) setMessages((m) => [...m, ...message])
+    else setMessages((m) => [...m, message])
+  }
 
-    const handleSchedule = async (text) => {
-        if (!text) return;
-        setText((_) => "");
-        addMessage({ text, type: "user" });
-        setLoading(true);
-        const res = await schedule(text, messages);
-        const { extract, error, classification, general } = res;
-        setLoading(false);
-        if (!res) {
-            addMessage({ text: "Error scheduling event", type: "error" });
-            console.log(error);
-            setLoading(false);
-            return;
-        }
+  const handleSchedule = async (text) => {
+    if (!text) return
+    setText((_) => '')
+    addMessage({ text, type: 'user' })
+    setLoading(true)
+    try {
+      const res = await schedule(text, messages)
+      setLoading(false)
+      if (!res) throw new Error('Error processing request')
+      else if (res.error) throw new Error(res.error)
 
-        if (classification === "no") {
-            addMessage({ text: general, type: "bot" });
-            return;
-        }
-
-        console.log(extract);
-
-        addMessage([
-            { text: extract, type: "event" },
+      switch (res.classification) {
+        case 'schedule':
+          const { event } = res
+          addMessage(
             {
-                text: "Is there anything else I can help you with?",
-                type: "bot",
+              text: event,
+              type: 'event',
             },
-        ]);
+            {
+              text: 'Is there anything else I can help you with?',
+              type: 'bot',
+            },
+          )
+          const { from, to, title, description, recurring, repeat } = event
+          const newEvent = await createEvent(title, from, to, `${description}\n\n#OptimeAI`, {
+            recurrence: recurring ? [`RRULE:${rrule}`] : [],
+          })
 
-        {
-            const { title, description, from, to, recurring, repeat, rrule } =
-                extract;
-            const newEvent = await createEvent(
-                title,
-                from,
-                to,
-                `${description}\n\n#OptimeAI`,
-                {
-                    recurrence: recurring ? [`RRULE:${rrule}`] : [],
-                },
-            );
+          console.log(newEvent)
 
-            console.log(newEvent);
+          await updateEvents()
+          break
 
-            await updateEvents();
-        }
-    };
+        case 'get_events':
 
-    const handleSpeechRecognition = (e) => {
-        if (recognizing) {
-            recognition.current.stop();
-            setRecognizing(false);
-            return;
-        }
+        case 'general':
+          addMessage({
+            text: res.general,
+            type: 'bot',
+          })
+          break
 
-        recognition.current.start();
-        setRecognizing(true);
-    };
+        default:
+          throw new Error('Error processing request')
+      }
+    } catch (error) {
+      addMessage({ text: 'Error processing request', type: 'error' })
+      console.log(error)
+      setLoading(false)
+    }
+  }
 
-    const ConfigSpeechRecognition = (recognition) => {
-        recognition.lang = "en-IN";
-        recognition.interimResults = true;
+  const handleSpeechRecognition = (e) => {
+    if (recognizing) {
+      recognition.current.stop()
+      setRecognizing(false)
+      return
+    }
 
-        let ignore_onend = false;
+    recognition.current.start()
+    setRecognizing(true)
+  }
 
-        recognition.addEventListener("result", (e) => {
-            const transcript = Array.from(e.results)
-                .map((result) => result[0])
-                .map((result) => result.transcript)
-                .join("");
-            setText(transcript);
-        });
+  const ConfigSpeechRecognition = (recognition) => {
+    recognition.lang = 'en-IN'
+    recognition.interimResults = true
 
-        recognition.onstart = () => {
-            setRecognizing(true);
-            setLoading(true);
-        };
+    let ignore_onend = false
 
-        recognition.onend = () => {
-            setRecognizing(false);
-            setLoading(false);
+    recognition.addEventListener('result', (e) => {
+      const transcript = Array.from(e.results)
+        .map((result) => result[0])
+        .map((result) => result.transcript)
+        .join('')
+      setText(transcript)
+    })
 
-            if (ignore_onend) {
-                ignore_onend = false;
-                return;
-            }
+    recognition.onstart = () => {
+      setRecognizing(true)
+      setLoading(true)
+    }
 
-            setTimeout(() => handleSchedule(text), 1000);
-        };
+    recognition.onend = () => {
+      setRecognizing(false)
+      setLoading(false)
 
-        recognition.onerror = function (event) {
-            if (event.error == "no-speech") {
-                console.log("info_no_speech");
-                ignore_onend = true;
-            }
+      if (ignore_onend) {
+        ignore_onend = false
+        return
+      }
 
-            if (event.error == "audio-capture") {
-                console.log("info_no_microphone");
-                ignore_onend = true;
-            }
-        };
+      setTimeout(() => handleSchedule(text), 1000)
+    }
 
-        recognition.onspeechend = () => {
-            setTimeout(() => recognition.end(), 3000);
-        };
+    recognition.onerror = function (event) {
+      if (event.error == 'no-speech') {
+        console.log('info_no_speech')
+        ignore_onend = true
+      }
 
-        return recognition;
-    };
+      if (event.error == 'audio-capture') {
+        console.log('info_no_microphone')
+        ignore_onend = true
+      }
+    }
 
-    useEffect(() => {
-        window.SpeechRecognition =
-            window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!window.SpeechRecognition) {
-            console.log("Speech Recognition not supported");
-        } else {
-            recognition.current = ConfigSpeechRecognition(
-                new window.SpeechRecognition(),
-            );
-        }
-    }, []);
+    recognition.onspeechend = () => {
+      setTimeout(() => recognition.end(), 3000)
+    }
 
-    useEffect(() => {
-        bottom.current.scrollIntoViewIfNeeded({ behavior: "smooth" });
-    }, [messages, loading, recognizing]);
+    return recognition
+  }
 
-    return (
-        <div className="col-span-5 grid h-full grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
-            <h1 className="text-2xl font-bold">Chat</h1>
+  useEffect(() => {
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!window.SpeechRecognition) {
+      console.log('Speech Recognition not supported')
+    } else {
+      recognition.current = ConfigSpeechRecognition(new window.SpeechRecognition())
+    }
+  }, [])
 
-            <div className="flex max-h-full flex-col overflow-y-auto rounded bg-neutral-600">
-                {messages.map((message, index) => (
-                    <Message {...message} key={index} />
-                ))}
-                <div
-                    className="flex items-center gap-2 px-4 py-4"
-                    style={{
-                        display: loading ? "flex" : "none",
-                    }}
-                >
-                    {recognizing && (
-                        <span className="font-semibold">Listening </span>
-                    )}
+  useEffect(() => {
+    bottom.current.scrollIntoViewIfNeeded({ behavior: 'smooth' })
+  }, [messages, loading, recognizing])
 
-                    {Array.from({ length: 3 }).map((_, index) => (
-                        <div
-                            className={twMerge(
-                                "h-3 w-3 animate-pulse rounded-full bg-neutral-200",
-                                recognizing && "bg-red-500",
-                            )}
-                            style={{ animationDelay: `${index * 100}ms` }}
-                            key={index}
-                        ></div>
-                    ))}
-                </div>
+  return (
+    <div className="col-span-5 grid h-full grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
+      <h1 className="text-2xl font-bold">Chat</h1>
 
-                <div ref={bottom} className="self-end"></div>
-            </div>
+      <div className="flex max-h-full flex-col overflow-y-auto rounded bg-neutral-600">
+        {messages.map((message, index) => (
+          <Message {...message} key={index} />
+        ))}
+        <div
+          className="flex items-center gap-2 px-4 py-4"
+          style={{
+            display: loading ? 'flex' : 'none',
+          }}
+        >
+          {recognizing && <span className="font-semibold">Listening </span>}
 
-            <form action="#" className="grid grid-cols-[1fr_auto_auto] gap-4">
-                <input
-                    type="text"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    className="w-full rounded bg-primary-500 px-4 py-2 font-bold text-white hover:bg-primary-400"
-                    autoFocus
-                />
-                <button
-                    onClick={() => {
-                        handleSchedule(text);
-                    }}
-                    className="cursor-pointer rounded bg-primary-500 px-4 py-2 font-bold text-white hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={!text}
-                    type="submit"
-                >
-                    Send
-                </button>
-                <button
-                    onClick={handleSpeechRecognition}
-                    className={twMerge(
-                        "cursor-pointer rounded bg-primary-500 px-4 py-2  hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50",
-                        recognizing && "border border-neutral-200",
-                    )}
-                >
-                    <img
-                        src={recognizing ? ActiveMicIcon : MicIcon}
-                        alt="Microphone"
-                        className="h-5 w-5"
-                    />
-                </button>
-            </form>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              className={twMerge('h-3 w-3 animate-pulse rounded-full bg-neutral-200', recognizing && 'bg-red-500')}
+              style={{ animationDelay: `${index * 100}ms` }}
+              key={index}
+            ></div>
+          ))}
         </div>
-    );
-};
-export default Chat;
 
-const EventMessage = ({
-    event: { from, to, title, description, recurring, repeat },
-}) => {
-    return (
-        <>
-            <div className="flex flex-col gap-2 bg-blue-700/25 px-4 py-4 before:mr-2 before:font-semibold before:[content:'>>_Scheduling_Event:']">
-                <div className="flex flex-col px-2 text-sm text-neutral-200">
-                    <span>
-                        <strong>Title: </strong>
-                        {title}
-                    </span>
-                    <EventDateFormat from={from} to={to} />
-                    {description && (
-                        <span>
-                            <strong>Description: </strong>
-                            {description}
-                        </span>
-                    )}
+        <div ref={bottom} className="self-end"></div>
+      </div>
 
-                    {recurring && (
-                        <span>
-                            <strong>Recurring: </strong>
-                            {repeat.toUpperCase()}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </>
-    );
-};
+      <form action="#" className="grid grid-cols-[1fr_auto_auto] gap-4">
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full rounded bg-primary-500 px-4 py-2 font-bold text-white hover:bg-primary-400"
+          autoFocus
+        />
+        <button
+          onClick={() => {
+            handleSchedule(text)
+          }}
+          className="cursor-pointer rounded bg-primary-500 px-4 py-2 font-bold text-white hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!text}
+          type="submit"
+        >
+          Send
+        </button>
+        <button
+          onClick={handleSpeechRecognition}
+          className={twMerge(
+            'cursor-pointer rounded bg-primary-500 px-4 py-2  hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50',
+            recognizing && 'border border-neutral-200',
+          )}
+        >
+          <img src={recognizing ? ActiveMicIcon : MicIcon} alt="Microphone" className="h-5 w-5" />
+        </button>
+      </form>
+    </div>
+  )
+}
+export default Chat
+
+const EventMessage = ({ event: { from, to, title, description, recurring, repeat } }) => {
+  return (
+    <>
+      <div className="flex flex-col gap-2 bg-blue-700/25 px-4 py-4 before:mr-2 before:font-semibold before:[content:'>>_Scheduling_Event:']">
+        <div className="flex flex-col px-2 text-sm text-neutral-200">
+          <span>
+            <strong>Title: </strong>
+            {title}
+          </span>
+          <EventDateFormat from={from} to={to} />
+          {description && (
+            <span>
+              <strong>Description: </strong>
+              {description}
+            </span>
+          )}
+
+          {recurring && (
+            <span>
+              <strong>Recurring: </strong>
+              {repeat.toUpperCase()}
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
 
 const EventDateFormat = ({ from, to }) => {
-    const from_date = new Date(from);
-    const to_date = new Date(to);
+  const from_date = new Date(from)
+  const to_date = new Date(to)
 
-    if (from_date.getDate() === to_date.getDate())
-        return (
-            <>
-                <span>
-                    <strong>Date: </strong>
-                    {from_date.toLocaleString("en-in", {
-                        dateStyle: "full",
-                    })}
-                </span>
-                <span>
-                    <strong>Time: </strong>
-                    {`${from_date.toLocaleString("en-in", {
-                        hour: "numeric",
-                        minute: "numeric",
-                    })} - ${to_date.toLocaleString("en-in", {
-                        hour: "numeric",
-                        minute: "numeric",
-                    })}`}
-                </span>
-            </>
-        );
-    else
-        return (
-            <>
-                <span>
-                    <strong>From: </strong>
-                    {from_date.toLocaleString("en-in", {
-                        dateStyle: "full",
-                        timeStyle: "short",
-                    })}
-                </span>
-                <span>
-                    <strong>To: </strong>
-                    {to_date.toLocaleString("en-in", {
-                        dateStyle: "full",
-                        timeStyle: "short",
-                    })}
-                </span>
-            </>
-        );
-};
+  if (from_date.getDate() === to_date.getDate())
+    return (
+      <>
+        <span>
+          <strong>Date: </strong>
+          {from_date.toLocaleString('en-in', {
+            dateStyle: 'full',
+          })}
+        </span>
+        <span>
+          <strong>Time: </strong>
+          {`${from_date.toLocaleString('en-in', {
+            hour: 'numeric',
+            minute: 'numeric',
+          })} - ${to_date.toLocaleString('en-in', {
+            hour: 'numeric',
+            minute: 'numeric',
+          })}`}
+        </span>
+      </>
+    )
+  else
+    return (
+      <>
+        <span>
+          <strong>From: </strong>
+          {from_date.toLocaleString('en-in', {
+            dateStyle: 'full',
+            timeStyle: 'short',
+          })}
+        </span>
+        <span>
+          <strong>To: </strong>
+          {to_date.toLocaleString('en-in', {
+            dateStyle: 'full',
+            timeStyle: 'short',
+          })}
+        </span>
+      </>
+    )
+}
 
 const Message = (message, index) => {
-    switch (message.type) {
-        case "bot":
-            return (
-                <div
-                    key={index}
-                    className="bg-teal-500/25 px-4  py-4 before:mr-2 before:font-semibold before:[content:'>>_Optime:']"
-                >
-                    {message.text}
-                </div>
-            );
-        case "user":
-            return (
-                <div
-                    key={index}
-                    className="bg-amber-600/25 px-4 py-4  before:mr-2 before:font-semibold before:[content:'>>_You:']"
-                >
-                    {message.text}
-                </div>
-            );
-        case "event":
-            return <EventMessage event={message.text} key={index} />;
+  switch (message.type) {
+    case 'bot':
+      return (
+        <div
+          key={index}
+          className="bg-teal-500/25 px-4  py-4 before:mr-2 before:font-semibold before:[content:'>>_Optime:']"
+        >
+          {message.text}
+        </div>
+      )
+    case 'user':
+      return (
+        <div
+          key={index}
+          className="bg-amber-600/25 px-4 py-4  before:mr-2 before:font-semibold before:[content:'>>_You:']"
+        >
+          {message.text}
+        </div>
+      )
+    case 'event':
+      return <EventMessage event={message.text} key={index} />
 
-        case "error":
-            return (
-                <div
-                    key={index}
-                    className="flex flex-col gap-2 bg-red-700 px-4 py-2"
-                >
-                    {">> "}
-                    {message.text}
-                </div>
-            );
-        default:
-            return <></>;
-    }
-};
+    case 'error':
+      return (
+        <div key={index} className="flex flex-col gap-2 bg-red-500 px-4 py-2">
+          {'>> '}
+          {message.text}
+        </div>
+      )
+    default:
+      return <></>
+  }
+}

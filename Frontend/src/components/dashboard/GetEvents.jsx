@@ -9,10 +9,9 @@ const GetEvents = () => {
                 className="rounded-lg bg-primary-500 px-4 py-2 text-lg font-bold text-white hover:bg-primary-400"
                 onClick={async () => {
                     const events = await getEvents(
-                        new Date().toISOString(),
-                        new Date(
-                            Date.now() + 3 * 60 * 60 * 24 * 1000,
-                        ).toISOString(),
+                        new Date("2024-04-05T10:00:00.000Z").toISOString(),
+                        new Date("2024-04-05T13:00:00.000Z").toISOString(),
+                        false,
                     );
                     console.log(events);
                 }}

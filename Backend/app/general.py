@@ -21,9 +21,10 @@ The text was classified as {classification} for being an event.
 Respond with a general and relevant polite response in short 1-3 sentences.
 The response should be relevant to the user's text message and can include suggestions for scheduling an event.
 It should prompt the user to send you a new text message and schedule an event.
+The user's name is {name}.
 Response:                   
 """,
-    input_variables=["input", "classification", "context"],
+    input_variables=["input", "classification", "context", "name"],
 )
 
 general_chain: RunnableSequence = general_prompt | llm | StrOutputParser()

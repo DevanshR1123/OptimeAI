@@ -26,6 +26,8 @@ export const AuthProvider = ({ children }) => {
         await supabase.auth.signOut();
         signedIn.current = false;
         setProfile(null);
+        setSession(null);
+        navigate("/");
     };
 
     const createCalendar = async (session) => {
@@ -148,7 +150,6 @@ export const AuthProvider = ({ children }) => {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                // redirectTo: "http://localhost:5173",
                 queryParams: {
                     access_type: "offline",
                     prompt: "consent",

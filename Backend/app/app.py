@@ -17,8 +17,11 @@ def llm():
     try:
         prompt_input = request.json["command"]
         context = request.json["context"]
+        token = request.json["token"]
+        calendar_id = request.json["calendar_id"]
+        name = request.json["name"]
 
-        llm_output = call_scheduler(prompt_input, context)
+        llm_output = call_scheduler(prompt_input, context, token, calendar_id, name)
         return jsonify(llm_output)
 
     except Exception as e:
