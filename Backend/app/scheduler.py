@@ -1,6 +1,7 @@
 from asyncio import events
 import json
 import math
+import time
 
 from dotenv import load_dotenv
 from pytz import timezone
@@ -37,12 +38,15 @@ logger = logging.getLogger(__name__)
 set_llm_cache(InMemoryCache())
 
 
-def get_calendar_events(token: str, calendar_id: str, time_min: str, time_max: str) -> str:
+def get_calendar_events(token: str, calendar_id: str, time_min: str, time_max: str, time_zone: str) -> list:
     """
     Get the calendar events from the Google Calendar API
     """
 
-    print(time_min, time_max)
+    # print(time_zone)
+    time_min = datetime.fromisoformat(time_min).replace(tzinfo=timezone(str(time_zone))).isoformat()
+    time_max = datetime.fromisoformat(time_max).replace(tzinfo=timezone(str(time_zone))).isoformat()
+    # print(time_min, time_max)
 
     url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
     headers = {"Authorization": f"Bearer {token}"}
@@ -54,36 +58,41 @@ def get_calendar_events(token: str, calendar_id: str, time_min: str, time_max: s
     if "items" not in data:
         return ""
 
-    print(calendar_id, len(data["items"]))
+    # print(calendar_id, len(data["items"]))
 
     events = data["items"]
 
-    return "\n".join(
-        [
-            str(
-                {
-                    "summary": event["summary"],
-                    "start": datetime.fromisoformat(event["start"]["dateTime"]).strftime("%A, %Y-%m-%d %H:%M:%S"),
-                    "end": datetime.fromisoformat(event["end"]["dateTime"]).strftime("%A, %Y-%m-%d %H:%M:%S"),
-                }
-            )
-            for event in events
-        ]
-    )
+    return [
+        {
+            "summary": event["summary"],
+            "start": datetime.fromisoformat(event["start"]["dateTime"]).strftime("%A, %Y-%m-%d %H:%M:%S"),
+            "end": datetime.fromisoformat(event["end"]["dateTime"]).strftime("%A, %Y-%m-%d %H:%M:%S"),
+        }
+        for event in events
+    ]
+
+
+def stringify_events(events: list) -> str:
+    if not events:
+        return "No events found"
+
+    return "\n".join([f"{event['summary']} from {event['start']} to {event['end']}" for event in events])
 
 
 primary_events = lambda x: get_calendar_events(
     token=x["token"],
     calendar_id="primary",
-    time_min=x["time_bounds"]["start"] + "Z",
-    time_max=x["time_bounds"]["end"] + "Z",
+    time_min=x["time_bounds"]["start"],
+    time_max=x["time_bounds"]["end"],
+    time_zone=x["timezone"],
 )
 
 weekly_events = lambda x: get_calendar_events(
     token=x["token"],
     calendar_id=x["calendar_id"],
-    time_min=x["time_bounds"]["start"] + "Z",
-    time_max=x["time_bounds"]["end"] + "Z",
+    time_min=x["time_bounds"]["start"],
+    time_max=x["time_bounds"]["end"],
+    time_zone=x["timezone"],
 )
 
 
@@ -100,34 +109,29 @@ chain = (
                         "extracted": lambda x: json.dumps(x["extract"], indent=2),
                         "current_date_time": lambda x: x["current_date_time"],
                         "tomorrow": lambda x: x["tomorrow"],
+                        "classification": lambda x: x["classification"],
+                        "timezone": lambda x: x["timezone"],
                     }
                     | time_chain
                 )
             )
-            | RunnablePassthrough.assign(
-                event=(
-                    {
-                        "extracted": lambda x: json.dumps(x["extract"], indent=2),
-                        "primary_events": primary_events,
-                        "weekly_events": weekly_events,
-                    }
-                    | RunnablePassthrough.assign(log=lambda x: print(x))
-                    | conflict_chain
-                )
-            ),
+            | RunnablePassthrough.assign(primary_events=primary_events, weekly_events=weekly_events)
+            | conflict_chain,
         ),
         (
             lambda x: x["classification"] == "get",
             RunnablePassthrough.assign(
                 time_bounds=(
                     {
+                        "input": lambda x: x["input"],
                         "current_date_time": lambda x: x["current_date_time"],
                         "tomorrow": lambda x: x["tomorrow"],
+                        "classification": lambda x: x["classification"],
                     }
                     | time_chain
                 )
             )
-            | RunnableParallel(
+            | RunnablePassthrough.assign(
                 primary_events=primary_events,
                 weekly_events=weekly_events,
             ),
@@ -137,7 +141,7 @@ chain = (
 )
 
 
-def call_scheduler(prompt_input, context, token, calendar_id, name):
+def call_scheduler(prompt_input, context, token, calendar_id, time_zone, name):
 
     try:
         # print("-" * 50)
@@ -149,17 +153,24 @@ def call_scheduler(prompt_input, context, token, calendar_id, name):
         i = 1
         while i < len(context):
             conversation = []
-            temp = ""
+            temp = []
             for j in range(i, len(context)):
                 message = context[j]
                 if message["type"] == "user":
                     conversation.append({"input": message["text"]})
-                elif message["type"] == "event":
-                    temp = json.dumps(message["text"], indent=4)
-                elif message["type"] == "bot":
-                    conversation.append({"output": temp + "\n" if temp != "" else "" + message["text"]})
+                elif j + 1 == len(context) or context[j + 1]["type"] == "user":
+                    conversation.append({"output": "\n".join(temp) + "\n" if temp != "" else "" + message["text"]})
                     i = j + 1
+                    temp = ""
                     break
+                else:
+                    if message["type"] == "event":
+                        temp.append(json.dumps(message["text"], indent=4))
+                    elif message["type"] == "display":
+                        temp.append(stringify_events(message["text"]))
+                    elif message["type"] == "bot":
+                        temp.append(message["text"])
+
             memory.save_context(*conversation)
 
         # print("Chat Memory:")
@@ -176,11 +187,27 @@ def call_scheduler(prompt_input, context, token, calendar_id, name):
                 "name": name,
                 "current_date_time": datetime.now().strftime("%A, %Y-%m-%d %H:%M:%S"),
                 "tomorrow": (datetime.now() + timedelta(days=1)).strftime("%A, %Y-%m-%d"),
+                "timezone": timezone(time_zone),
             }
         )
 
         print("Scheduler Output:")
-        print(json.dumps(llm_output, indent=4))
+        print(
+            json.dumps(
+                {
+                    "classification": llm_output["classification"],
+                    "extract": llm_output.get("extract", ""),
+                    "event": llm_output.get("event", ""),
+                    "time_bounds": llm_output.get("time_bounds", ""),
+                    "primary_events": llm_output.get("primary_events", ""),
+                    "weekly_events": llm_output.get("weekly_events", ""),
+                    "general": llm_output.get("general", ""),
+                    "conflict": llm_output.get("conflict", ""),
+                    "conflict_message": llm_output.get("conflict_message", ""),
+                },
+                indent=4,
+            )
+        )
 
         # print("-" * 50)
 
@@ -189,12 +216,14 @@ def call_scheduler(prompt_input, context, token, calendar_id, name):
         return {"error": str(e)}
 
     match llm_output["classification"]:
-        case "extract":
+        case "schedule":
             return {
                 "classification": llm_output["classification"],
                 "event": llm_output["event"],
+                "conflict": llm_output["conflict"],
+                "conflict_message": llm_output["conflict_message"],
             }
-        case "get_events":
+        case "get":
             return {
                 "classification": llm_output["classification"],
                 "primary_events": llm_output["primary_events"],

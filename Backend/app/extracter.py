@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 
 from app.llm import get_llm
 from langchain.output_parsers import (
@@ -11,7 +12,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableSequence
 
-llm = get_llm(max_tokens=256)
+llm = get_llm(max_tokens=256, json_output=True)
 
 
 class Event(BaseModel):

@@ -18,8 +18,6 @@ Determine the user's intent from the following input:
 you can either:
 - schedule a new event
 - get events from the calendar
-- update an existing event
-- delete an event
 - or provide general assistance
 
 schedule example:
@@ -30,7 +28,7 @@ schedule example:
 - Go to the supermarket at 8pm to buy some groceries
 - Watch a movie at 9pm
 
-get_events example:
+get example:
 - What events do I have tomorrow?
 - What do I have planned for today?
 - What are my plans for the week?
@@ -38,28 +36,25 @@ get_events example:
 - What do I have planned for the month?
 - What events do I have this month?
 
-update example:
-- Update the meeting with John to 4 PM
-- Change the gym session to 6pm
-- Reschedule the study session to 8pm
-- Move the supermarket trip to 9pm
-- Change the movie night to 10pm
-
-delete example:
-- Delete the meeting with John
-- Cancel the gym session
-- Remove the study session
-- Cancel the supermarket trip
-- Delete the movie night
-
 In case of general assistance, the user might ask for help or ask a general question or make a general statement.
+general assistance might include but is not limited to:
+- Asking for help
+- Making a general statement
+- Asking about the schedule
+- Asking about the calendar
+- Asking based on previous responses
+- Describing the user's schedule
+- Asking for clarifications
+- Inquiring about the user's schedule
+- Asking for more information
+- Asking for inference based on the user's schedule
     
 Use the following chat history as a guide to respond:
 {context}
 
 Use only the latest message as context for the current input.
 
-Respond with either 'schedule', 'get_events', 'update', 'delete', or 'general'.
+Respond with either 'schedule', 'get', or 'general'.
 Response:
 """,
     input_variables=["input", "context"],

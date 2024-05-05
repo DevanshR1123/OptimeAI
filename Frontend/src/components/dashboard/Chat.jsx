@@ -9,7 +9,7 @@ const Chat = () => {
   const { schedule } = useLLM()
   const { quickAddEvent, updateEvent, updateEvents, createEvent } = useCalendar()
 
-  const [text, setText] = useState('Schedule a meeting with John at 2pm tomorrow for an hour')
+  const [text, setText] = useState('What is my schedule today?')
 
   const [messages, setMessages] = useState([
     {
@@ -42,17 +42,21 @@ const Chat = () => {
 
       switch (res.classification) {
         case 'schedule':
-          const { event } = res
-          addMessage(
+          const { event, conflict, conflict_message } = res
+          addMessage([
             {
               text: event,
               type: 'event',
+              meta: {
+                conflict,
+                conflict_message,
+              },
             },
             {
               text: 'Is there anything else I can help you with?',
               type: 'bot',
             },
-          )
+          ])
           const { from, to, title, description, recurring, repeat } = event
           const newEvent = await createEvent(title, from, to, `${description}\n\n#OptimeAI`, {
             recurrence: recurring ? [`RRULE:${rrule}`] : [],
@@ -63,7 +67,48 @@ const Chat = () => {
           await updateEvents()
           break
 
-        case 'get_events':
+        case 'get':
+          const { primary_events, weekly_events } = res
+          console.log(primary_events, weekly_events)
+
+          if (weekly_events.length)
+            addMessage([
+              {
+                text: 'Your Timetable',
+                type: 'bot',
+              },
+              {
+                text: weekly_events,
+                type: 'display',
+                meta: 'weekly',
+              },
+            ])
+
+          if (primary_events.length)
+            addMessage([
+              {
+                text: 'Events',
+                type: 'bot',
+              },
+              {
+                text: primary_events,
+                type: 'display',
+                meta: 'primary',
+              },
+            ])
+
+          if (!primary_events.length && !weekly_events.length)
+            addMessage({
+              text: 'No events found',
+              type: 'bot',
+            })
+
+          addMessage({
+            text: 'Is there anything else I can help you with?',
+            type: 'bot',
+          })
+
+          break
 
         case 'general':
           addMessage({
@@ -153,14 +198,14 @@ const Chat = () => {
   }, [])
 
   useEffect(() => {
-    bottom.current.scrollIntoViewIfNeeded({ behavior: 'smooth' })
+    bottom.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, recognizing])
 
   return (
-    <div className="col-span-5 grid h-full grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
+    <div className="col-span-5 row-span-2 grid grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
       <h1 className="text-2xl font-bold">Chat</h1>
 
-      <div className="flex max-h-full flex-col overflow-y-auto rounded bg-neutral-600">
+      <div className="flex max-h-[65vh] min-h-[65vh] flex-col overflow-y-auto rounded bg-neutral-600">
         {messages.map((message, index) => (
           <Message {...message} key={index} />
         ))}
@@ -217,7 +262,10 @@ const Chat = () => {
 }
 export default Chat
 
-const EventMessage = ({ event: { from, to, title, description, recurring, repeat } }) => {
+const EventMessage = ({
+  event: { from, to, title, description, recurring, repeat },
+  conflict_info: { conflict, conflict_message },
+}) => {
   return (
     <>
       <div className="flex flex-col gap-2 bg-blue-700/25 px-4 py-4 before:mr-2 before:font-semibold before:[content:'>>_Scheduling_Event:']">
@@ -240,35 +288,85 @@ const EventMessage = ({ event: { from, to, title, description, recurring, repeat
               {repeat.toUpperCase()}
             </span>
           )}
+
+          {conflict && (
+            <span className="text-balance mt-4 bg-red-500/25 px-4 py-2">
+              <strong>Note: </strong>
+              {conflict_message}
+            </span>
+          )}
         </div>
       </div>
     </>
   )
 }
 
-const EventDateFormat = ({ from, to }) => {
+const EventDisplay = ({ events, type }) => {
+  const allDatesSame = (events) => {
+    const dates = events.map((event) => new Date(event.start).getDate())
+    return dates.every((date) => date === dates[0])
+  }
+
+  return (
+    <div
+      className={twMerge(
+        'grid gap-2 bg-blue-700/25 px-4 py-4',
+        type === 'primary' && 'grid-cols-5',
+        type === 'weekly' && 'grid-cols-[repeat(3,auto_1fr)]',
+        !allDatesSame(events) && 'grid-cols-[repeat(2,auto_1fr_1fr)]',
+      )}
+    >
+      {events.map(({ summary, start, end }, index) => (
+        <div
+          className={twMerge(
+            'grid grid-cols-[subgrid] gap-4 rounded bg-black/20 px-4 py-2 text-sm text-neutral-200',
+            type === 'primary' && 'col-span-3',
+            type === 'weekly' && 'col-span-2',
+            !allDatesSame(events) && 'col-span-3  gap-8',
+          )}
+          key={index}
+        >
+          <span className={twMerge(!allDatesSame(events) && 'grid')}>
+            <strong>Title: </strong>
+            {summary}
+          </span>
+          <EventDateFormat from={start} to={end} date={!allDatesSame(events)} br={!allDatesSame(events)} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const EventDateFormat = ({ from, to, time = true, date = true, br = false }) => {
   const from_date = new Date(from)
   const to_date = new Date(to)
+
+  // console.log(from, to)
+  // console.log(from_date, to_date)
 
   if (from_date.getDate() === to_date.getDate())
     return (
       <>
-        <span>
-          <strong>Date: </strong>
-          {from_date.toLocaleString('en-in', {
-            dateStyle: 'full',
-          })}
-        </span>
-        <span>
-          <strong>Time: </strong>
-          {`${from_date.toLocaleString('en-in', {
-            hour: 'numeric',
-            minute: 'numeric',
-          })} - ${to_date.toLocaleString('en-in', {
-            hour: 'numeric',
-            minute: 'numeric',
-          })}`}
-        </span>
+        {date && (
+          <span className={twMerge(br && 'grid')}>
+            <strong>Date: </strong>
+            {from_date.toLocaleString('en-in', {
+              dateStyle: 'full',
+            })}
+          </span>
+        )}
+        {time && (
+          <span className={twMerge(br && 'grid')}>
+            <strong>Time: </strong>
+            {`${from_date.toLocaleString('en-in', {
+              hour: 'numeric',
+              minute: 'numeric',
+            })} - ${to_date.toLocaleString('en-in', {
+              hour: 'numeric',
+              minute: 'numeric',
+            })}`}
+          </span>
+        )}
       </>
     )
   else
@@ -313,7 +411,10 @@ const Message = (message, index) => {
         </div>
       )
     case 'event':
-      return <EventMessage event={message.text} key={index} />
+      return <EventMessage event={message.text} conflict_info={message.meta} key={index} />
+
+    case 'display':
+      return <EventDisplay events={message.text} type={message.meta} key={index} />
 
     case 'error':
       return (

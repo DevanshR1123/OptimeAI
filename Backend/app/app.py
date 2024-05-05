@@ -20,8 +20,9 @@ def llm():
         token = request.json["token"]
         calendar_id = request.json["calendar_id"]
         name = request.json["name"]
+        time_zone = request.json["time_zone"]
 
-        llm_output = call_scheduler(prompt_input, context, token, calendar_id, name)
+        llm_output = call_scheduler(prompt_input, context, token, calendar_id, time_zone, name)
         return jsonify(llm_output)
 
     except Exception as e:
