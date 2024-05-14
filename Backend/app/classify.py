@@ -11,44 +11,57 @@ llm = get_llm(max_tokens=10)
 
 classify_prompt = PromptTemplate(
     template="""
-Determine the user's intent from the following input:
+Determine the user's intent from the following message:
 
 {input}
 
 you can either:
 - schedule a new event
 - get events from the calendar
-- or provide general assistance
+- provide general response
 
-schedule example:
-- Schedule a meeting with John tomorrow at 3 PM
+It can be a calendar event if it contains a time range, a title, and a optional description.
+An event is only characterised by the presence of these three things.
+If the message does not contain a time range, a title, and a description, it is not an event and you should provide a general response.
+
+Examples of events:
 - Meeting with John at 2pm to discuss the new project
 - Go to the gym at 5pm to do some cardio
 - Study for the exam at 7pm
 - Go to the supermarket at 8pm to buy some groceries
 - Watch a movie at 9pm
 
-get example:
+Examples of non-events:
+- I am going to the gym
+- I have a meeting with John
+- I am going to the supermarket
+- I am going to watch a movie
+- Schedule a meeting with John
+- Schedule a 2hr gym session
+
+You should ask for more information for the above non-events to schedule an event.
+
+user can say things like the following to get events from the calendar:
 - What events do I have tomorrow?
 - What do I have planned for today?
 - What are my plans for the week?
 - What events do I have this week?
 - What do I have planned for the month?
-- What events do I have this month?
 
-In case of general assistance, the user might ask for help or ask a general question or make a general statement.
-general assistance might include but is not limited to:
-- Asking for help
-- Making a general statement
-- Asking about the schedule
-- Asking about the calendar
-- Asking based on previous responses
-- Describing the user's schedule
-- Asking for clarifications
-- Inquiring about the user's schedule
-- Asking for more information
-- Asking for inference based on the user's schedule
-    
+In case neither of the above is true, you can provide a general response.
+The user can ask you to:
+    - provide general information.
+    - provide inferences based on the chat history.
+    - provide a general response based on the chat history.
+    - describe the chat history.
+    - describe the chat history containing their events.
+    - find out what the user wants to do.
+    - calculate break time based on the chat history.
+- You can ask for more information or clarify the user's intent in case of ambiguity.
+- If user has not provided enough information about the event, ask for more information to schedule an event.
+- prompt the user to schedule an event if the information provided is not enough.
+- provide a general response if there is any ambiguity in the user's intent or if the user has not provided enough information.
+
 Use the following chat history as a guide to respond:
 {context}
 

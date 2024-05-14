@@ -29,22 +29,26 @@ template = """
 The below is is an extracted event from the user's input text:
 {extracted}
 
+{schema}
+
 The below is the conflicting events from the user's calendar events:
 {conflicting_events}
 
-The extracted event conflicts with the user's calendar events.
-Please resolve the conflict by adjusting the event time to fit within any free time slots between the time bounds.
-Adjust the event time to fit within any free time slots between the time bounds.
-Take note of the conflicting events, weekly events, and primary events to ensure that the event does not conflict with any existing events.
+The below are the available time slots for the event:
+{slots}
 
-{schema}
- 
+The extracted event conflicts with the user's calendar events.
+Please resolve the conflict by adjusting the event time to fit within any free time slots.
+Take note of the conflicting events to ensure that the event does not conflict with any existing events.
+The event timings should be adjusted to fit within the user's calendar events.
+Thoroughly check the conflicting events to ensure that the event does not overlap with any existing events.
+You can adjust the event timings by a few hours. 
 Response:
 """
 
 conflict_prompt = PromptTemplate(
     template=template,
-    input_variables=["extracted", "conflicting_events"],
+    input_variables=["extracted", "conflicting_events", "slots"],
     partial_variables={"schema": parser.get_format_instructions()},
 )
 
@@ -88,9 +92,23 @@ def stringify_events(events: list) -> str:
     return "\n".join([f"{event['summary']} from {event['from']} to {event['to']}" for event in events])
 
 
+def stringify_slots(slots: list) -> str:
+    if not slots:
+        return "No slots found"
+
+    return "\n".join(
+        [
+            f"From {slot['from'].strftime('%Y-%m-%d %H:%M:%S')} to {slot['to'].strftime('%Y-%m-%d %H:%M:%S')} with duration of {slot['duration']} hours"
+            for slot in slots
+        ]
+    )
+
+
 def get_conflict_bounds(x):
 
-    print(x["extract"])
+    # print(x["extract"])
+    fr, to = datetime.fromisoformat(x["extract"]["from"]), datetime.fromisoformat(x["extract"]["to"])
+    event_duration = (to - fr).total_seconds() / 3600
 
     weekly_events = format_events(x["weekly_events"], x["extract"])
     primary_events = format_events(x["primary_events"], x["extract"])
@@ -101,8 +119,61 @@ def get_conflict_bounds(x):
     ]
     conflicting_events = sorted(conflicting_events, key=lambda x: x["from"])
 
-    print(f"{conflicting_events = }")
+    all_events = sorted(
+        filter(
+            lambda x: x["from"].replace(tzinfo=None) >= fr.replace(tzinfo=None)
+            and x["from"].replace(tzinfo=None).date() == fr.replace(tzinfo=None).date(),
+            weekly_events + primary_events,
+        ),
+        key=lambda x: x["from"],
+    )
+    slots = []
 
+    first = all_events[0]
+    first_duration = (
+        first["from"] - datetime(first["from"].year, first["from"].month, first["from"].day)
+    ).total_seconds() / 3600
+    slots.append(
+        {
+            "from": datetime(first["from"].year, first["from"].month, first["from"].day),
+            "to": first["from"],
+            "duration": first_duration,
+            "fit": first_duration - event_duration,
+            "change": (to - first["from"]).total_seconds() / 3600,
+        }
+    )
+
+    for i in range(len(all_events) - 1):
+        if all_events[i]["to"] < all_events[i + 1]["from"]:
+            duration = (all_events[i + 1]["from"] - all_events[i]["to"]).total_seconds() / 3600
+            slots.append(
+                {
+                    "from": all_events[i]["to"],
+                    "to": all_events[i + 1]["from"],
+                    "duration": duration,
+                    "fit": duration - event_duration,
+                    "change": (all_events[i]["to"] - fr).total_seconds() / 3600,
+                }
+            )
+
+    last = all_events[-1]
+    last_duration = (
+        datetime(last["to"].year, last["to"].month, last["to"].day) + timedelta(days=1) - last["to"]
+    ).total_seconds() / 3600
+    slots.append(
+        {
+            "from": last["to"],
+            "to": datetime(last["to"].year, last["to"].month, last["to"].day) + timedelta(days=1),
+            "duration": last_duration,
+            "fit": last_duration - event_duration,
+            "change": (last["to"] - fr).total_seconds() / 3600,
+        }
+    )
+
+    print(f"Slots:\n{stringify_slots(slots)}")
+    print(f"Conflicts:\n{stringify_events(conflicting_events)}")
+
+    x["slots"] = stringify_slots(slots)
     x["conflicting_events"] = stringify_events(conflicting_events)
     x["conflict"] = len(conflicting_events) > 0
     x["extracted"] = json.dumps(x["extract"], indent=2)

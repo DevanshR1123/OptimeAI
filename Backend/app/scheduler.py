@@ -5,6 +5,7 @@ import time
 
 from dotenv import load_dotenv
 from pytz import timezone
+from pytz.tzinfo import DstTzInfo
 
 load_dotenv()
 
@@ -38,19 +39,19 @@ logger = logging.getLogger(__name__)
 set_llm_cache(InMemoryCache())
 
 
-def get_calendar_events(token: str, calendar_id: str, time_min: str, time_max: str, time_zone: str) -> list:
+def get_calendar_events(token: str, calendar_id: str, time_min: str, time_max: str, time_zone: DstTzInfo) -> list:
     """
     Get the calendar events from the Google Calendar API
     """
 
     # print(time_zone)
-    time_min = datetime.fromisoformat(time_min).replace(tzinfo=timezone(str(time_zone))).isoformat()
-    time_max = datetime.fromisoformat(time_max).replace(tzinfo=timezone(str(time_zone))).isoformat()
+    time_min = datetime.fromisoformat(time_min).replace(tzinfo=timezone(time_zone)).isoformat()
+    time_max = datetime.fromisoformat(time_max).replace(tzinfo=timezone(time_zone)).isoformat()
     # print(time_min, time_max)
 
     url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
     headers = {"Authorization": f"Bearer {token}"}
-    params = {"timeMin": time_min, "timeMax": time_max}
+    params = {"timeMin": time_min, "timeMax": time_max, "singleEvents": True, "orderBy": "startTime"}
 
     response = get(url, headers=headers, params=params)
     data = response.json()
@@ -116,6 +117,7 @@ chain = (
                 )
             )
             | RunnablePassthrough.assign(primary_events=primary_events, weekly_events=weekly_events)
+            # | RunnablePassthrough.assign(log=lambda x: print(json.dumps(x, indent=4)))
             | conflict_chain,
         ),
         (
@@ -136,12 +138,22 @@ chain = (
                 weekly_events=weekly_events,
             ),
         ),
-        RunnablePassthrough.assign(general=general_chain, type=lambda x: "general"),
+        RunnablePassthrough.assign(
+            time_bounds=lambda x: {
+                "start": (datetime.now()).isoformat(),
+                "end": (datetime.now() + timedelta(days=7)).isoformat(),
+            },
+        )
+        | RunnablePassthrough.assign(
+            primary_events=lambda x: stringify_events(primary_events(x)),
+            weekly_events=lambda x: stringify_events(weekly_events(x)),
+        )
+        | RunnablePassthrough.assign(general=general_chain, type=lambda x: "general"),
     )
 )
 
 
-def call_scheduler(prompt_input, context, token, calendar_id, time_zone, name):
+def call_scheduler(prompt_input: str, context: list, token: str, calendar_id: str, time_zone: DstTzInfo, name: str):
 
     try:
         # print("-" * 50)
@@ -187,7 +199,7 @@ def call_scheduler(prompt_input, context, token, calendar_id, time_zone, name):
                 "name": name,
                 "current_date_time": datetime.now().strftime("%A, %Y-%m-%d %H:%M:%S"),
                 "tomorrow": (datetime.now() + timedelta(days=1)).strftime("%A, %Y-%m-%d"),
-                "timezone": timezone(time_zone),
+                "timezone": str(time_zone),
             }
         )
 

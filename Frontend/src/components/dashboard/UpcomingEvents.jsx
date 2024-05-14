@@ -1,12 +1,13 @@
 import { useCalendar } from '../contexts/Calendar'
 import { twMerge } from 'tailwind-merge'
 import ReloadIcon from '../../assets/icons/reload.svg'
+import XIcon from '../../assets/icons/x-icon.svg'
 
 export const UpcomingEvents = () => {
   const { events, updateEvents, deleteEvent } = useCalendar()
 
   return (
-    <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
+    <div className="col-span-2 grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">Upcoming Events</h1>
         <button
@@ -18,12 +19,12 @@ export const UpcomingEvents = () => {
           <img src={ReloadIcon} alt="Reload" className="h-5 w-5" />
         </button>
       </div>
-      <div className="flex max-h-64 flex-col gap-4 overflow-y-auto">
+      <div className="flex flex-col gap-4 overflow-y-auto">
         {events.length ? (
           events.map((event) => (
             <div
               className={twMerge(
-                'grid h-fit grid-cols-[1fr-auto] grid-rows-2 gap-2 rounded-lg bg-primary-700 px-6 py-4',
+                'grid h-fit grid-cols-[1fr-auto] grid-rows-2 gap-2 rounded-lg bg-primary-700 p-4',
                 event.description?.includes('#OptimeAI') ? 'bg-green-800' : 'bg-primary-600',
               )}
               key={event.id}
@@ -32,10 +33,10 @@ export const UpcomingEvents = () => {
                 <h3 className="text-xl font-bold">{event.summary}</h3>
               </a>
               <button
-                className="aspect-square w-6 place-self-end rounded-md bg-primary-800 p-1 text-xs "
+                className="aspect-square w-6 justify-self-end rounded-md bg-primary-800 p-1 text-xs "
                 onClick={() => deleteEvent(event.id)}
               >
-                X
+                <img src={XIcon} alt="Delete" className="h-4 w-4" />
               </button>
               <p className="col-span-2 font-semibold">
                 <EventDateFormat from={event.start.dateTime} to={event.end.dateTime} />
@@ -54,7 +55,7 @@ export const UpcomingEvents = () => {
 
 export default UpcomingEvents
 
-const EventDateFormat = ({ from, to }) => {
+const EventDateFormat = ({ from, to, br = false }) => {
   const from_date = new Date(from)
   const to_date = new Date(to)
 
@@ -64,7 +65,7 @@ const EventDateFormat = ({ from, to }) => {
         {from_date.toLocaleString('en-in', {
           dateStyle: 'long',
         })}
-        ,{' '}
+        ,{br ? <br /> : ' '}
         {`${from_date.toLocaleString('en-in', {
           hour: 'numeric',
           minute: 'numeric',

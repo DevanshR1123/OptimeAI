@@ -31,12 +31,13 @@ today's date and time: {current_date_time} (in the format: day, year-month-day h
 tomorrow's date: {tomorrow} (in the format: day, year-month-day)
 
 Determine the min and max timebounds between which the event can be scheduled.
-These bounds will be used to fetch the user's calendar events to check for conflicts.
+These bounds will be used to fetch the user's calendar events to check for conflicts and to suggest a free time slot.
 The event time will be adjusted to fit within any free time slots between these bounds.
-Selected a larger time range to increase the chances of finding a free slot, it can upto few days and aleast a few hours.
+Selected a larger time range to increase the chances of finding a free slot, it can upto few days and aleast a day.
 Adjust the flexibility of the time range as needed depending on the urgency of the event.
+
 The time bounds should be in ISO 8601 format. For example, 2022-01-01T00:00:00Z.
-These time bounds will be used for the Google Calendar API query.
+These time bounds will be used for the Google Calendar API events list query.
 The start time should be before the end time.
 Response:
 """,

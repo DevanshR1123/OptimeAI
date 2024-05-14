@@ -13,14 +13,12 @@ export const Dashboard = () => {
   }, [])
 
   return (
-    <div className="grid grid-cols-7 grid-rows-[1fr_auto] gap-8 p-8">
+    <div className="grid grid-cols-7 grid-rows-2 gap-8 overflow-hidden p-8">
       <Chat />
-      <section className="col-span-2 grid gap-4">
-        {/* <CreateEvent /> */}
-        <UpcomingEvents />
-        <TodayTimetable />
-        {/* <GetEvents /> */}
-      </section>
+      <UpcomingEvents />
+      <TodayTimetable />
+      {/* <CreateEvent /> */}
+      {/* <GetEvents /> */}
     </div>
   )
 }

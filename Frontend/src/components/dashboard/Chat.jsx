@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import MicIcon from '../../assets/icons/microphone.svg'
 import ActiveMicIcon from '../../assets/icons/microphone-active.svg'
+import XIcon from '../../assets/icons/x-icon.svg'
 import { useCalendar } from '../contexts/Calendar'
 import { useLLM } from '../contexts/LLM'
 
 const Chat = () => {
   const { schedule } = useLLM()
-  const { quickAddEvent, updateEvent, updateEvents, createEvent } = useCalendar()
+  const { updateEvents, createEvent } = useCalendar()
 
   const [text, setText] = useState('What is my schedule today?')
 
@@ -202,10 +203,23 @@ const Chat = () => {
   }, [messages, loading, recognizing])
 
   return (
-    <div className="col-span-5 row-span-2 grid grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
+    <div className="col-span-5 row-span-2 grid grid-cols-[1fr_auto] grid-rows-sandwich gap-4 rounded-lg bg-primary-700 p-8">
       <h1 className="text-2xl font-bold">Chat</h1>
+      <button
+        onClick={() =>
+          setMessages([
+            {
+              text: 'Hi, how can I help you?',
+              type: 'bot',
+            },
+          ])
+        }
+        className="relative grid aspect-square place-items-center text-primary-200 before:absolute before:right-full before:my-auto before:mr-2 before:block before:w-max before:rounded before:bg-primary-500 before:px-2 before:py-1 before:text-xs before:font-semibold before:opacity-0 before:transition-opacity before:content-['Clear_Chat'] hover:before:opacity-100"
+      >
+        <img src={XIcon} alt="Clear Chat" className="size-4" />
+      </button>
 
-      <div className="flex max-h-[65vh] min-h-[65vh] flex-col overflow-y-auto rounded bg-neutral-600">
+      <div className="col-span-2 flex flex-col overflow-y-auto rounded bg-neutral-600">
         {messages.map((message, index) => (
           <Message {...message} key={index} />
         ))}
@@ -229,7 +243,7 @@ const Chat = () => {
         <div ref={bottom} className="self-end"></div>
       </div>
 
-      <form action="#" className="grid grid-cols-[1fr_auto_auto] gap-4">
+      <form action="#" className="col-span-2 grid grid-cols-[1fr_auto_auto] gap-4">
         <input
           type="text"
           value={text}
@@ -269,7 +283,7 @@ const EventMessage = ({
   return (
     <>
       <div className="flex flex-col gap-2 bg-blue-700/25 px-4 py-4 before:mr-2 before:font-semibold before:[content:'>>_Scheduling_Event:']">
-        <div className="flex flex-col px-2 text-sm text-neutral-200">
+        <div className="grid gap-1 px-2 text-sm text-neutral-200">
           <span>
             <strong>Title: </strong>
             {title}
@@ -290,7 +304,7 @@ const EventMessage = ({
           )}
 
           {conflict && (
-            <span className="text-balance mt-4 bg-red-500/25 px-4 py-2">
+            <span className="mt-4 text-pretty bg-red-500/25 px-4 py-2">
               <strong>Note: </strong>
               {conflict_message}
             </span>
@@ -301,36 +315,51 @@ const EventMessage = ({
   )
 }
 
-const EventDisplay = ({ events, type }) => {
-  const allDatesSame = (events) => {
-    const dates = events.map((event) => new Date(event.start).getDate())
-    return dates.every((date) => date === dates[0])
-  }
+const allDatesSame = (events) => {
+  const dates = events.map((event) => new Date(event.start).getDate())
+  return dates.every((date) => date === dates[0])
+}
 
+const EventDisplay = ({ events, type }) => {
   return (
-    <div
-      className={twMerge(
-        'grid gap-2 bg-blue-700/25 px-4 py-4',
-        type === 'primary' && 'grid-cols-5',
-        type === 'weekly' && 'grid-cols-[repeat(3,auto_1fr)]',
-        !allDatesSame(events) && 'grid-cols-[repeat(2,auto_1fr_1fr)]',
-      )}
-    >
+    <div className={'grid grid-cols-5 gap-2 bg-blue-700/25 px-4 py-4'}>
       {events.map(({ summary, start, end }, index) => (
         <div
-          className={twMerge(
-            'grid grid-cols-[subgrid] gap-4 rounded bg-black/20 px-4 py-2 text-sm text-neutral-200',
-            type === 'primary' && 'col-span-3',
-            type === 'weekly' && 'col-span-2',
-            !allDatesSame(events) && 'col-span-3  gap-8',
-          )}
+          className={'col-span-3 grid grid-cols-[subgrid] gap-4 rounded bg-black/20 px-4 py-2 text-sm text-neutral-200'}
           key={index}
         >
-          <span className={twMerge(!allDatesSame(events) && 'grid')}>
+          <span>
             <strong>Title: </strong>
             {summary}
           </span>
-          <EventDateFormat from={start} to={end} date={!allDatesSame(events)} br={!allDatesSame(events)} />
+          <EventDateFormat from={start} to={end} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const WeeklyEventDisplay = ({ events }) => {
+  const groupedEvents = Object.groupBy(events, (event) =>
+    new Date(event.start).toLocaleDateString('en-IN', { weekday: 'long' }),
+  )
+  return (
+    <div className="grid gap-2 bg-blue-700/25 px-4 py-4">
+      {Object.entries(groupedEvents).map(([day, events], index) => (
+        <div
+          className="grid grid-cols-[repeat(4,1fr)] gap-x-4 gap-y-2 rounded bg-black/20 p-4 text-sm text-neutral-200"
+          key={index}
+        >
+          <h3 className="col-span-full text-lg font-bold">{day}</h3>
+          {events.map(({ summary, start, end }, index) => (
+            <div className="grid gap-2 rounded bg-black/20 px-4 py-2 text-sm text-neutral-200" key={index}>
+              <span>
+                <strong>Title: </strong>
+                {summary}
+              </span>
+              <EventDateFormat from={start} to={end} date={false} />
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -414,7 +443,11 @@ const Message = (message, index) => {
       return <EventMessage event={message.text} conflict_info={message.meta} key={index} />
 
     case 'display':
-      return <EventDisplay events={message.text} type={message.meta} key={index} />
+      return message.meta === 'weekly' ? (
+        <WeeklyEventDisplay events={message.text} key={index} />
+      ) : (
+        <EventDisplay events={message.text} type={message.meta} key={index} />
+      )
 
     case 'error':
       return (

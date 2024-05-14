@@ -7,7 +7,7 @@ const passedEvent = (event) =>
 export const TodayTimetable = () => {
   const { timetable } = useCalendar()
   return (
-    <div className="grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
+    <div className="col-span-2 grid grid-rows-[auto_1fr] gap-4 rounded-lg bg-primary-700 p-8">
       <div className="grid grid-cols-[1fr_auto] items-center gap-4">
         <h1 className="text-2xl font-bold">Today's Timetable</h1>
         <div className="grid max-w-fit text-right">
@@ -23,7 +23,7 @@ export const TodayTimetable = () => {
           </span>
         </div>
       </div>
-      <div className="flex max-h-64 flex-col gap-4 overflow-y-auto px-4">
+      <div className="flex flex-col gap-4 overflow-y-auto px-4">
         {timetable.length ? (
           timetable
             .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime))

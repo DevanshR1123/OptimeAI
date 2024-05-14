@@ -22,8 +22,8 @@
 #root {
   display: grid;
   grid-template-rows: auto 1fr;
-  /* max-height: 100vh;
-  overflow: hidden; */
+  height: 100vh;
+  overflow: hidden;
 }
 
 ::-webkit-scrollbar {
@@ -40,4 +40,6 @@
 
 main {
   display: grid;
+  overflow: hidden;
+  max-height: calc(100vh - 5rem);
 }

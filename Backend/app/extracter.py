@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import json
+import re
 
 from app.llm import get_llm
 from langchain.output_parsers import (
@@ -16,10 +17,10 @@ llm = get_llm(max_tokens=256, json_output=True)
 
 
 class Event(BaseModel):
-    from_: datetime = Field(alias="from", description="Start date and time of the event without timezone")
-    to: datetime = Field(description="End date and time of the event without timezone")
-    title: str = Field(description="Title of the event")
-    description: str = Field(description="Description of the event")
+    from_: datetime = Field(alias="from", description="Start date and time of the event without timezone", const=True)
+    to: datetime = Field(description="End date and time of the event without timezone", const=True)
+    title: str = Field(description="Title of the event", const=True)
+    description: str = Field(description="Description of the event", default="", const=True)
     duration: str = Field(description="Duration of the event")
     recurring: bool = Field(description="Is the event recurring")
     repeat: str = Field(description="Recurring pattern of the event")
