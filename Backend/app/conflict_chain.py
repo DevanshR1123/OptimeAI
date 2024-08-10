@@ -129,6 +129,22 @@ def get_conflict_bounds(x):
     )
     slots = []
 
+    if not all_events:
+        slots.append(
+            {
+                "from": fr,
+                "to": to,
+                "duration": event_duration,
+                "fit": 0,
+                "change": 0,
+            }
+        )
+        x["slots"] = stringify_slots(slots)
+        x["conflicting_events"] = stringify_events(conflicting_events)
+        x["conflict"] = len(conflicting_events) > 0
+        x["extracted"] = json.dumps(x["extract"], indent=2)
+        return x
+
     first = all_events[0]
     first_duration = (
         first["from"] - datetime(first["from"].year, first["from"].month, first["from"].day)

@@ -5,6 +5,7 @@ import ActiveMicIcon from '../../assets/icons/microphone-active.svg'
 import XIcon from '../../assets/icons/x-icon.svg'
 import { useCalendar } from '../contexts/Calendar'
 import { useLLM } from '../contexts/LLM'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 const Chat = () => {
   const { schedule } = useLLM()
@@ -21,6 +22,9 @@ const Chat = () => {
 
   const [loading, setLoading] = useState(false)
   const [recognizing, setRecognizing] = useState(false)
+
+  const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition, interimTranscript } =
+    useSpeechRecognition()
 
   const bottom = useRef(null)
   const recognition = useRef(null)
@@ -129,14 +133,15 @@ const Chat = () => {
   }
 
   const handleSpeechRecognition = (e) => {
-    if (recognizing) {
+    e.preventDefault()
+    if (listening) {
       recognition.current.stop()
-      setRecognizing(false)
-      return
+      console.log(transcript, interimTranscript)
+      setText(transcript)
+      resetTranscript()
+    } else {
+      recognition.current.start()
     }
-
-    recognition.current.start()
-    setRecognizing(true)
   }
 
   const ConfigSpeechRecognition = (recognition) => {
@@ -190,13 +195,9 @@ const Chat = () => {
   }
 
   useEffect(() => {
-    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!window.SpeechRecognition) {
-      console.log('Speech Recognition not supported')
-    } else {
-      recognition.current = ConfigSpeechRecognition(new window.SpeechRecognition())
-    }
-  }, [])
+    if (!browserSupportsSpeechRecognition) return
+    recognition.current = ConfigSpeechRecognition(SpeechRecognition.getRecognition())
+  }, [browserSupportsSpeechRecognition])
 
   useEffect(() => {
     bottom.current.scrollIntoView({ behavior: 'smooth' })
@@ -265,10 +266,11 @@ const Chat = () => {
           onClick={handleSpeechRecognition}
           className={twMerge(
             'cursor-pointer rounded bg-primary-500 px-4 py-2  hover:bg-primary-400 disabled:cursor-not-allowed disabled:opacity-50',
-            recognizing && 'border border-neutral-200',
+            listening && 'border border-neutral-200',
           )}
+          disabled={!browserSupportsSpeechRecognition}
         >
-          <img src={recognizing ? ActiveMicIcon : MicIcon} alt="Microphone" className="h-5 w-5" />
+          <img src={listening ? ActiveMicIcon : MicIcon} alt="Microphone" className="h-5 w-5" />
         </button>
       </form>
     </div>
