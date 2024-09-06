@@ -52,7 +52,7 @@ matplotlib-inline==0.1.6
 multidict==6.0.4
 mypy-extensions==1.0.0
 nest-asyncio==1.6.0
-nltk==3.8.1
+nltk==3.9
 numpy==1.26.2
 packaging==23.2
 parso==0.8.3
